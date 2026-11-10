@@ -115,13 +115,13 @@ export function Cierre({ qrYoutube, yaRespondio }: { qrYoutube: string; yaRespon
           target="_blank"
           rel="noopener noreferrer"
           className="block shrink-0 rounded-xl bg-blanco p-2 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-amarillo"
-          aria-label="Código QR del canal de YouTube futsala-tv"
+          aria-label="Código QR del canal de YouTube de futsala.co"
         >
           <span className="block h-36 w-36 [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: qrYoutube }} />
         </a>
         <div className="flex-1">
           <p className="font-semibold">Mira los partidos en YouTube</p>
-          <p className="mt-1 text-sm text-white/65">Escanea el código o toca el botón: @futsala-tv</p>
+          <p className="mt-1 text-sm text-white/65">Escanea el código o toca el botón para suscribirte.</p>
           <a href={REDES.youtubeSuscribir} target="_blank" rel="noopener noreferrer" className="btn-rojo mt-3 w-full sm:w-auto">
             <Icono nombre="youtube" /> Suscríbete
           </a>

@@ -11,8 +11,8 @@ export const SITIO = {
 } as const;
 
 export const REDES = {
-  youtube: "https://www.youtube.com/@futsala-tv",
-  youtubeSuscribir: "https://www.youtube.com/@futsala-tv?sub_confirmation=1",
+  youtube: "https://www.youtube.com/channel/UCYCgGBhseQMEd6syQqsbveQ",
+  youtubeSuscribir: "https://www.youtube.com/channel/UCYCgGBhseQMEd6syQqsbveQ?sub_confirmation=1",
   instagram: "https://www.instagram.com/futsala.tv/",
   tiktok: "https://www.tiktok.com/@futsala.co",
   facebook: "https://www.facebook.com/futsala.co",
