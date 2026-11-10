@@ -57,7 +57,7 @@ Abre http://localhost:3000. Para probar en el celular, conéctalo a la misma red
 | Archivo | Qué hacer |
 |---|---|
 | `public/logos/futsala.png` | Reemplázalo por el logo oficial de futsala.co (PNG con fondo transparente, ~360×120 px) |
-| `public/logos/lfsb.png` | Reemplázalo por el escudo oficial de la LFSB (PNG transparente, cuadrado, ~160×160 px) |
+| `public/logos/parche.png` | Parche de color de futsala.co (lado derecho del encabezado). Se genera sin fondo desde `assets/logos-originales/futsala-parche-color.png` con `node scripts/parche-transparente.mjs` |
 | `assets/cancha.jpg` | *(Opcional)* Pon aquí una foto real de una cancha de fútbol de salón |
 
 Después ejecuta:

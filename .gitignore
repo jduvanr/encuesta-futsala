@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+.env
+.env*.local
+npm-debug.log*
+.DS_Store
+
+# Logos en alta resolución (muy pesados para git/la web)
+assets/logos-originales/
