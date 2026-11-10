@@ -1,35 +1,36 @@
 -- ═══════════════════════════════════════════════════════════════════
--- Encuesta "¿Cómo vives el fútbol de salón en Bogotá?" — futsala.co
+-- Encuestas dirigidas futsala.co y Liga de Fútbol de Salón de Bogotá
+-- (jugadores, aficionados, cuerpo técnico y organizadores)
 -- Pega todo este archivo en Supabase → SQL Editor → Run.
 -- Se puede ejecutar varias veces sin romper nada.
 -- ═══════════════════════════════════════════════════════════════════
 
--- ── Tabla de respuestas ─────────────────────────────────────────────
+-- ── Tabla de respuestas por rol ─────────────────────────────────────
 -- El id lo genera el navegador y se guarda en localStorage: si la misma
 -- persona intenta enviar dos veces, la llave primaria lo rechaza.
-create table if not exists public.respuestas (
+-- El bloque inicial (rol, localidad, edad) va en columnas; las respuestas
+-- propias de cada rol (J1…J15, A1…A12, T1…T11, O1…O12) van en "detalle" (JSON).
+create table if not exists public.respuestas_roles (
   id            uuid primary key,
   fecha         timestamptz not null default now(),
   autorizacion  boolean not null check (autorizacion = true),
-  edad          text not null check (edad in ('Menos de 18','18 a 25','26 a 35','36 a 45','Más de 45')),
+  rol           text not null check (rol in (
+                  'Jugador o jugadora','Aficionado o espectador',
+                  'Entrenador o cuerpo técnico','Organizador de torneos o liga')),
   localidad     text not null check (localidad in (
                   'Usaquén','Chapinero','Santa Fe','San Cristóbal','Usme','Tunjuelito','Bosa',
                   'Kennedy','Fontibón','Engativá','Suba','Barrios Unidos','Teusaquillo',
                   'Los Mártires','Antonio Nariño','Puente Aranda','La Candelaria',
-                  'Rafael Uribe Uribe','Ciudad Bolívar','Sumapaz','Fuera de Bogotá')),
-  frecuencia    text check (frecuencia in ('Cada semana','Cada mes','Solo finales o partidos especiales','Casi nunca')),
-  canales       text[] not null default '{}'
-                  check (canales <@ array['Instagram','Facebook','TikTok','YouTube','WhatsApp','Voz a voz']::text[]),
-  preferencia   text check (preferencia in ('Partido completo en vivo','Resumen','Solo goles','Historias y detrás de cámaras','Entrevistas')),
-  seguridad     smallint check (seguridad between 1 and 5),
-  comodidad     smallint check (comodidad between 1 and 5),
-  banos         smallint check (banos between 1 and 5),
-  comida        smallint check (comida between 1 and 5),
-  pago_final    text check (pago_final in ('No','Sí hasta 5.000 pesos','Sí hasta 10.000 pesos','Sí más de 10.000 pesos')),
+                  'Rafael Uribe Uribe','Ciudad Bolívar','Sumapaz',
+                  'Soacha','Otro municipio de Cundinamarca','Otro lugar')),
+  edad          text not null check (edad in ('Menos de 14','14 a 17','18 a 25','26 a 35','36 a 45','46 o más')),
+  detalle       jsonb not null default '{}'::jsonb
+                  check (jsonb_typeof(detalle) = 'object' and pg_column_size(detalle) <= 8192),
   origen        text check (char_length(origen) <= 100)
 );
 
-create index if not exists respuestas_fecha_idx on public.respuestas (fecha desc);
+create index if not exists respuestas_roles_fecha_idx on public.respuestas_roles (fecha desc);
+create index if not exists respuestas_roles_rol_idx on public.respuestas_roles (rol);
 
 -- ── Tabla de contactos (separada: no se puede cruzar con las respuestas) ─
 create table if not exists public.contactos (
@@ -39,11 +40,11 @@ create table if not exists public.contactos (
 );
 
 -- ── Seguridad: Row Level Security ──────────────────────────────────
-alter table public.respuestas enable row level security;
-alter table public.contactos  enable row level security;
+alter table public.respuestas_roles enable row level security;
+alter table public.contactos        enable row level security;
 
-drop policy if exists "publico_solo_inserta" on public.respuestas;
-create policy "publico_solo_inserta" on public.respuestas
+drop policy if exists "publico_solo_inserta" on public.respuestas_roles;
+create policy "publico_solo_inserta" on public.respuestas_roles
   for insert to anon with check (autorizacion = true);
 
 drop policy if exists "publico_solo_inserta" on public.contactos;
@@ -52,13 +53,16 @@ create policy "publico_solo_inserta" on public.contactos
 
 -- No hay ninguna política SELECT/UPDATE/DELETE para anon ⇒ el público no puede leer,
 -- editar ni borrar. Además se limitan los permisos a nivel de columnas:
-revoke all on public.respuestas from anon, authenticated;
-revoke all on public.contactos  from anon, authenticated;
+revoke all on public.respuestas_roles from anon, authenticated;
+revoke all on public.contactos        from anon, authenticated;
 
-grant insert (id, autorizacion, edad, localidad, frecuencia, canales, preferencia,
-              seguridad, comodidad, banos, comida, pago_final, origen)
-  on public.respuestas to anon;
+grant insert (id, autorizacion, rol, localidad, edad, detalle, origen) on public.respuestas_roles to anon;
 grant insert (whatsapp) on public.contactos to anon;
 
 -- El panel /admin lee con la llave service_role (secreta), que salta RLS.
-grant all on public.respuestas, public.contactos to service_role;
+grant all on public.respuestas_roles, public.contactos to service_role;
+
+-- ── Versión anterior ───────────────────────────────────────────────
+-- La primera versión (8 preguntas) usaba la tabla "respuestas". Ya no se usa.
+-- Si no tiene datos que quieras conservar, puedes borrarla quitando el "--" de la siguiente línea:
+-- drop table if exists public.respuestas;

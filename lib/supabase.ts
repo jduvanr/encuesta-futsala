@@ -14,7 +14,7 @@ function encabezados(llave: string): Record<string, string> {
 export type ResultadoInsercion = "ok" | "duplicado" | "error";
 
 /** Inserta una fila con la llave pública. RLS solo permite insertar, nunca leer. */
-export async function insertarPublico(tabla: "respuestas" | "contactos", fila: object): Promise<ResultadoInsercion> {
+export async function insertarPublico(tabla: "respuestas_roles" | "contactos", fila: object): Promise<ResultadoInsercion> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const llave = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !llave) {

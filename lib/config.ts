@@ -3,8 +3,8 @@ export const SITIO = {
   url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, ""),
   titulo: "¿Cómo vives el fútbol de salón en Bogotá?",
   descripcion:
-    "Estudio de futsala.co con la Liga de Fútbol de Salón de Bogotá. Son 8 preguntas, menos de 2 minutos.",
-  tiempoEstimado: "1 minuto 20 segundos",
+    "Estudio de futsala.co con la Liga de Fútbol de Salón de Bogotá. Elige tu rol y responde entre 3 y 4 minutos.",
+  tiempoEstimado: "3 a 4 minutos",
   // Correo para que los participantes ejerzan sus derechos (Ley 1581). CÁMBIALO por uno real.
   correoDatos: "futsalabogotatv@gmail.com",
   responsable: "futsala.co",
@@ -19,4 +19,4 @@ export const REDES = {
 } as const;
 
 /** Clave de localStorage para evitar respuestas duplicadas. */
-export const CLAVE_LOCAL = "futsala-encuesta-bogota-v1";
+export const CLAVE_LOCAL = "futsala-encuesta-bogota-v2";

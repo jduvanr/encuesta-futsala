@@ -18,10 +18,11 @@ Encuesta pensada primero para celular, para el estudio de **futsala.co** con la 
 1. En Supabase, crea un proyecto nuevo (**New project**). Región sugerida: **South America (São Paulo)**.
 2. Ve a **SQL Editor → New query**, pega todo el contenido de [`supabase/schema.sql`](supabase/schema.sql) y pulsa **Run**.
    Esto crea:
-   - `respuestas`: id, fecha, autorizacion, edad, localidad, frecuencia, canales (arreglo), preferencia, seguridad, comodidad, banos, comida, pago_final, origen
+   - `respuestas_roles`: id, fecha, autorizacion, rol, localidad, edad, origen y `detalle` (JSON con las respuestas propias del rol: `j4`, `a8`, `t3`, `o10`…)
    - `contactos`: id, fecha, whatsapp (separada, no se puede cruzar con las respuestas)
    - **Row Level Security activado**: el público solo puede **insertar**. No puede leer, editar ni borrar.
-   - Restricciones que solo aceptan las opciones válidas de cada pregunta y celulares colombianos de 10 dígitos.
+   - Restricciones que solo aceptan roles, localidades y edades válidos, un `detalle` de máximo 8 KB y celulares colombianos de 10 dígitos.
+   > Si ya habías corrido la versión anterior del archivo, vuelve a correrlo: crea la tabla nueva y no toca la vieja (`respuestas`), que ya no se usa.
 3. Ve a **Project Settings → API** (o **API Keys**) y copia:
    - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
    - **anon public** (o **publishable**) → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -101,11 +102,12 @@ Esto regenera:
 - **Privacidad:** las respuestas no tienen nombre ni teléfono. El WhatsApp opcional va a la tabla `contactos`, sin ningún vínculo con las respuestas.
 - **Velocidad:** no se usa el SDK de Supabase en el navegador (se usa `fetch` directo a la API REST), la fuente Poppins se sirve desde el mismo dominio y el QR de YouTube se genera en el servidor. Recharts solo se carga en `/admin`.
 - **Panel `/admin`:** protegido con cookie `httpOnly` firmada a partir de `ADMIN_PASSWORD`. Cambiar la contraseña cierra todas las sesiones. Los CSV usan `;` como separador y UTF-8 con BOM para abrir bien en Excel en español.
-- **Preguntas obligatorias:** autorización, edad y localidad. Para volver obligatoria otra pregunta cambia `obligatoria: true` en [`lib/encuesta.ts`](lib/encuesta.ts).
+- **Encuestas por rol:** bloque inicial (B1 autorización, B2 rol, B3 localidad, B4 edad) y luego la encuesta del rol: jugadores (J1–J15), aficionados (A1–A12), cuerpo técnico (T1–T11) u organizadores (O1–O12). Saltos: jugadores de categoría Infantil o Juvenil menores de 18 pasan de J2 a J13; A9 solo aparece si en A8 no respondió "No pagaría". Si no autoriza en B1, la encuesta termina sin guardar nada.
+- **Preguntas obligatorias:** todas, salvo las marcadas `opcional: true` en [`lib/encuesta.ts`](lib/encuesta.ts) (ingresos, salud, lesiones y la pregunta abierta).
+- **Panel:** elige un rol para ver las gráficas de cada pregunta (barras, promedios de las escalas y lista de respuestas abiertas). El CSV de un rol trae una columna por pregunta (`J4 ¿Recibes algún pago por jugar?`…).
 
 ## 8. Personalizar
 
 - Textos, correo de contacto para datos personales y redes: [`lib/config.ts`](lib/config.ts). **Cambia `correoDatos` por un correo real** antes de publicar (lo exige la Ley 1581).
-- Preguntas y opciones: [`lib/encuesta.ts`](lib/encuesta.ts). Si cambias opciones, actualiza también las restricciones en `supabase/schema.sql`.
+- Preguntas, opciones y saltos: [`lib/encuesta.ts`](lib/encuesta.ts). El panel y el CSV se arman solos a partir de ese archivo. Si cambias las opciones de rol, localidad o edad, actualiza también las restricciones en `supabase/schema.sql`.
 - Política de datos: [`app/politica-de-datos/page.tsx`](app/politica-de-datos/page.tsx).
-"# encuesta-futsala" 

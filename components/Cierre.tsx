@@ -25,7 +25,7 @@ export function Cierre({ qrYoutube, yaRespondio }: { qrYoutube: string; yaRespon
     if (leerEstado()?.contacto) setEstadoTel("ok");
   }, []);
 
-  const textoCompartir = `${SITIO.titulo} Responde la encuesta de futsala.co y la Liga de Fútbol de Salón de Bogotá (menos de 2 minutos): ${SITIO.url}/?utm_source=whatsapp`;
+  const textoCompartir = `${SITIO.titulo} Responde la encuesta de futsala.co y la Liga de Fútbol de Salón de Bogotá (3 a 4 minutos): ${SITIO.url}/?utm_source=whatsapp`;
 
   async function guardarTel(e: React.FormEvent) {
     e.preventDefault();
@@ -55,8 +55,11 @@ export function Cierre({ qrYoutube, yaRespondio }: { qrYoutube: string; yaRespon
       </h1>
       <p className="mt-3 text-[15px] leading-relaxed text-white/80">
         {yaRespondio && "Tu respuesta ya quedó registrada desde este dispositivo. "}
-        Gracias por participar. Sigue <strong className="font-semibold text-amarillo">@futsala.tv</strong> para conocer los
-        resultados.
+        Gracias por responder. Tus respuestas ayudan a mejorar el fútbol de salón en Bogotá. Síguenos en Instagram como{" "}
+        <a href={REDES.instagram} target="_blank" rel="noopener noreferrer" className="font-semibold text-amarillo underline-offset-2 hover:underline">
+          @futsala.tv
+        </a>
+        .
       </p>
 
       {/* WhatsApp opcional */}
@@ -68,7 +71,7 @@ export function Cierre({ qrYoutube, yaRespondio }: { qrYoutube: string; yaRespon
         ) : (
           <form onSubmit={guardarTel} noValidate>
             <label htmlFor="whatsapp" className="block text-sm font-semibold">
-              ¿Quieres recibir los resultados por WhatsApp? <span className="font-normal text-white/55">(opcional)</span>
+              Si quieres recibir los resultados del estudio, déjanos tu WhatsApp <span className="font-normal text-white/55">(opcional)</span>
             </label>
             <p id="ayuda-whatsapp" className="mt-1 text-xs text-white/55">
               Tu número se guarda aparte de tus respuestas, que siguen siendo anónimas.

@@ -1,25 +1,40 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { SITIO } from "@/lib/config";
 import { guardarEstado, leerEstado, nuevoId } from "@/lib/estado";
-import { PREGUNTAS, RESPUESTAS_INICIALES, validar, type Pregunta, type Respuestas } from "@/lib/encuesta";
+import {
+  BLOQUE_INICIAL,
+  NO_AUTORIZA,
+  ROLES,
+  detalleDe,
+  preguntasVisibles,
+  rolDe,
+  validar,
+  type Pregunta,
+  type Respuestas,
+  type Valor,
+} from "@/lib/encuesta";
 import { insertarPublico } from "@/lib/supabase";
 import { Bandera } from "./Encabezado";
 import { Cierre } from "./Cierre";
 
-type Fase = "inicio" | "preguntas" | "fin";
+type Fase = "inicio" | "preguntas" | "sin-autorizacion" | "fin";
+
 function origenUtm(): string {
   const p = new URLSearchParams(window.location.search);
   return (p.get("utm_source") || p.get("utm_medium") || p.get("utm_campaign") || "directo").slice(0, 100);
 }
 
+const PRIMERA = BLOQUE_INICIAL[0].id;
+const MAS_LARGA = Math.max(...ROLES.map((r) => r.preguntas.length));
+
 export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
   const [fase, setFase] = useState<Fase>("inicio");
-  const [paso, setPaso] = useState(0);
+  const [pasoId, setPasoId] = useState(PRIMERA);
   const [direccion, setDireccion] = useState<"adelante" | "atras">("adelante");
-  const [r, setR] = useState<Respuestas>(RESPUESTAS_INICIALES);
+  const [r, setR] = useState<Respuestas>({});
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [yaRespondio, setYaRespondio] = useState(false);
@@ -38,17 +53,24 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
   useEffect(() => {
     if (cambioDePaso.current) tituloRef.current?.focus();
     cambioDePaso.current = false;
-  }, [paso, fase]);
+  }, [pasoId, fase]);
 
-  const pregunta = PREGUNTAS[paso];
-  const total = PREGUNTAS.length;
-  const esUltima = paso === total - 1;
+  const visibles = useMemo(() => preguntasVisibles(r), [r]);
+  const idx = Math.max(0, visibles.findIndex((p) => p.id === pasoId));
+  const pregunta = visibles[idx];
+  const rol = rolDe(r.rol);
+  const esUltima = Boolean(rol) && idx === visibles.length - 1;
+
+  function poner(clave: string, valor: Valor | undefined) {
+    setR((prev) => ({ ...prev, [clave]: valor }));
+    setError(null);
+  }
 
   function irA(nuevo: number, dir: "adelante" | "atras") {
     setError(null);
     setDireccion(dir);
     cambioDePaso.current = true;
-    setPaso(nuevo);
+    setPasoId(visibles[nuevo].id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -64,13 +86,26 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
       setError(msg);
       return;
     }
-    if (!esUltima) return irA(paso + 1, "adelante");
+    if (pregunta.tipo === "autorizacion" && r.autorizacion === NO_AUTORIZA) {
+      cambioDePaso.current = true;
+      setFase("sin-autorizacion");
+      return;
+    }
+    if (!esUltima) return irA(idx + 1, "adelante");
 
     setEnviando(true);
     setError(null);
     const estado = leerEstado() ?? { id: nuevoId(), enviado: false };
     guardarEstado(estado);
-    const resultado = await insertarPublico("respuestas", { id: estado.id, ...r, origen: origenUtm() });
+    const resultado = await insertarPublico("respuestas_roles", {
+      id: estado.id,
+      autorizacion: true,
+      rol: r.rol,
+      localidad: r.localidad,
+      edad: r.edad,
+      detalle: detalleDe(r),
+      origen: origenUtm(),
+    });
     setEnviando(false);
     if (resultado === "error") {
       setError("No pudimos guardar tu respuesta. Revisa tu conexión e inténtalo de nuevo.");
@@ -84,13 +119,39 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
   }
 
   function atras() {
-    if (paso === 0) {
+    if (idx === 0) {
       setError(null);
       setFase("inicio");
-    } else irA(paso - 1, "atras");
+    } else irA(idx - 1, "atras");
   }
 
   if (fase === "fin") return <Cierre qrYoutube={qrYoutube} yaRespondio={yaRespondio} />;
+
+  if (fase === "sin-autorizacion") {
+    return (
+      <section className="tarjeta animate-aparece" aria-labelledby="titulo-sin">
+        <Bandera className="mb-6 w-20" />
+        <h1 id="titulo-sin" ref={tituloRef} tabIndex={-1} className="text-[26px] font-bold leading-tight outline-none">
+          Entendido, no guardamos nada
+        </h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-white/80">
+          Sin tu autorización no podemos registrar respuestas. Gracias por tu tiempo. Si cambias de opinión, puedes volver a
+          empezar.
+        </p>
+        <button
+          type="button"
+          className="btn-secundario mt-6 w-full"
+          onClick={() => {
+            cambioDePaso.current = true;
+            setPasoId(PRIMERA);
+            setFase("preguntas");
+          }}
+        >
+          <span aria-hidden="true">←</span> Volver a la autorización
+        </button>
+      </section>
+    );
+  }
 
   if (fase === "inicio") {
     return (
@@ -100,15 +161,25 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
         <h1 id="titulo-encuesta" className="text-[28px] font-bold leading-tight sm:text-4xl">
           {SITIO.titulo}
         </h1>
-        <p className="mt-4 text-[15px] leading-relaxed text-white/80">{SITIO.descripcion}</p>
-        <ul className="mt-6 grid grid-cols-2 gap-3 text-sm">
+        <p className="mt-4 text-[15px] leading-relaxed text-white/80">
+          Estudio de futsala.co con la Liga de Fútbol de Salón de Bogotá. Primero eliges tu rol y luego respondes las preguntas
+          pensadas para ti.
+        </p>
+        <ul className="mt-5 flex flex-wrap gap-2" aria-label="Encuestas disponibles">
+          {ROLES.map((x) => (
+            <li key={x.corto} className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-sm">
+              {x.corto}
+            </li>
+          ))}
+        </ul>
+        <ul className="mt-5 grid grid-cols-2 gap-3 text-sm">
           <li className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
             <span className="block text-white/60">Tiempo estimado</span>
             <span className="font-semibold">{SITIO.tiempoEstimado}</span>
           </li>
           <li className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-            <span className="block text-white/60">Preguntas</span>
-            <span className="font-semibold">8, una por pantalla</span>
+            <span className="block text-white/60">Formato</span>
+            <span className="font-semibold">Una pregunta por pantalla</span>
           </li>
         </ul>
         <button type="button" onClick={empezar} className="btn-primario mt-7 w-full text-lg">
@@ -125,26 +196,32 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
     );
   }
 
-  const progreso = Math.round(((paso + 1) / total) * 100);
+  // Progreso: por sección (datos iniciales / encuesta del rol) y barra general.
+  const nBloque = BLOQUE_INICIAL.length;
+  const enBloque = idx < nBloque;
+  const totalGeneral = rol ? visibles.length : nBloque + MAS_LARGA;
+  const seccion = enBloque ? "Datos iniciales" : `Encuesta para ${rol!.corto.toLowerCase()}`;
+  const numSeccion = enBloque ? idx + 1 : idx - nBloque + 1;
+  const totalSeccion = enBloque ? nBloque : visibles.length - nBloque;
+  const progreso = Math.round(((idx + 1) / totalGeneral) * 100);
 
   return (
     <section className="tarjeta" aria-label="Encuesta">
-      {/* Progreso */}
       <div className="mb-6">
-        <div className="mb-2 flex justify-between text-xs font-semibold text-white/70">
-          <span>
-            Pregunta {paso + 1} de {total}
+        <div className="mb-2 flex justify-between gap-3 text-xs font-semibold text-white/70">
+          <span>{seccion}</span>
+          <span className="shrink-0">
+            {numSeccion} de {totalSeccion}
           </span>
-          <span>{progreso}%</span>
         </div>
         <div
           className="h-2 w-full overflow-hidden rounded-full bg-white/10"
           role="progressbar"
           aria-label="Progreso de la encuesta"
           aria-valuemin={0}
-          aria-valuemax={total}
-          aria-valuenow={paso + 1}
-          aria-valuetext={`Pregunta ${paso + 1} de ${total}`}
+          aria-valuemax={100}
+          aria-valuenow={progreso}
+          aria-valuetext={`${seccion}: pregunta ${numSeccion} de ${totalSeccion}`}
         >
           <div
             className="h-full rounded-full bg-gradient-to-r from-amarillo to-rojo transition-[width] duration-500 ease-out"
@@ -160,7 +237,7 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
         }}
         noValidate
       >
-        <div key={paso} className={direccion === "adelante" ? "animate-entra-derecha" : "animate-entra-izquierda"}>
+        <div key={pregunta.id} className={direccion === "adelante" ? "animate-entra-derecha" : "animate-entra-izquierda"}>
           <h2
             ref={tituloRef}
             tabIndex={-1}
@@ -168,16 +245,16 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
             className="text-[22px] font-bold leading-snug outline-none sm:text-2xl"
           >
             {pregunta.titulo}
-            {pregunta.obligatoria ? (
-              <span className="text-amarillo" aria-label="(obligatoria)"> *</span>
-            ) : (
+            {pregunta.opcional ? (
               <span className="ml-2 align-middle text-xs font-normal text-white/50">(opcional)</span>
+            ) : (
+              <span className="text-amarillo" aria-label="(obligatoria)"> *</span>
             )}
           </h2>
-          {pregunta.ayuda && <p className="mt-1 text-sm text-white/65">{pregunta.ayuda}</p>}
+          <Ayuda pregunta={pregunta} />
 
           <div className="mt-5">
-            <Campo pregunta={pregunta} r={r} setR={(nr) => (setR(nr), setError(null))} errorId={error ? "error-paso" : undefined} />
+            <Campo pregunta={pregunta} r={r} poner={poner} errorId={error ? "error-paso" : undefined} />
           </div>
         </div>
 
@@ -203,102 +280,125 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
   );
 }
 
+function Ayuda({ pregunta: p }: { pregunta: Pregunta }) {
+  let texto = p.ayuda;
+  if (!texto && p.tipo === "multiple") texto = p.max ? `Elige máximo ${p.max} opciones.` : "Puedes marcar varias opciones.";
+  if (!texto && p.tipo === "escala") texto = `1 = ${p.extremos[0]} · 5 = ${p.extremos[1]}`;
+  return texto ? <p className="mt-1 text-sm text-white/65">{texto}</p> : null;
+}
+
+/** Dos columnas solo si todas las opciones son cortas. */
+const columnas = (opciones: readonly string[]) =>
+  opciones.length > 3 && opciones.every((o) => o.length <= 16) ? "grid-cols-2" : "grid-cols-1";
+
+function Radios({
+  nombre,
+  opciones,
+  valor,
+  alElegir,
+  etiquetaId,
+  errorId,
+}: {
+  nombre: string;
+  opciones: readonly string[];
+  valor: Valor | undefined;
+  alElegir: (op: string) => void;
+  etiquetaId: string;
+  errorId?: string;
+}) {
+  return (
+    <div role="radiogroup" aria-labelledby={etiquetaId} aria-describedby={errorId} className={`grid gap-2.5 ${columnas(opciones)}`}>
+      {opciones.map((op) => (
+        <label key={op} className="opcion">
+          <input type="radio" name={nombre} value={op} className="peer sr-only" checked={valor === op} onChange={() => alElegir(op)} />
+          <span className="marca rounded-full peer-checked:border-[7px] peer-checked:border-amarillo" />
+          <span>{op}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 function Campo({
   pregunta: p,
   r,
-  setR,
+  poner,
   errorId,
 }: {
   pregunta: Pregunta;
   r: Respuestas;
-  setR: (r: Respuestas) => void;
+  poner: (clave: string, valor: Valor | undefined) => void;
   errorId?: string;
 }) {
   const etiqueta = `p-${p.id}`;
+  const valor = r[p.id];
 
   switch (p.tipo) {
-    case "casilla":
+    case "autorizacion":
       return (
-        <label className="opcion items-start">
-          <input
-            type="checkbox"
-            className="peer sr-only"
-            checked={r.autorizacion}
-            onChange={(e) => setR({ ...r, autorizacion: e.target.checked })}
-            aria-describedby={errorId}
-            aria-required="true"
-          />
-          <span className="marca mt-0.5 rounded-md peer-checked:border-amarillo peer-checked:bg-amarillo [&>svg]:opacity-0 peer-checked:[&>svg]:opacity-100">
-            <Chulo />
-          </span>
-          <span className="text-[15px]">
+        <div className="grid gap-3">
+          <p id={`texto-${p.id}`} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-[15px] leading-relaxed text-white/85">
             {p.texto}{" "}
             <Link href="/politica-de-datos" target="_blank" className="text-amarillo underline underline-offset-2">
               Ver política
             </Link>
-          </span>
-        </label>
+          </p>
+          <Radios nombre={p.id} opciones={p.opciones} valor={valor} alElegir={(op) => poner(p.id, op)} etiquetaId={`${etiqueta} texto-${p.id}`} errorId={errorId} />
+        </div>
       );
 
     case "unica":
-      return (
-        <div role="radiogroup" aria-labelledby={etiqueta} aria-required={p.obligatoria} aria-describedby={errorId} className="grid gap-2.5">
-          {p.opciones.map((op) => (
-            <label key={op} className="opcion">
-              <input
-                type="radio"
-                name={p.campo}
-                value={op}
-                className="peer sr-only"
-                checked={r[p.campo] === op}
-                onChange={() => setR({ ...r, [p.campo]: op })}
-              />
-              <span className="marca rounded-full peer-checked:border-[7px] peer-checked:border-amarillo" />
-              <span>{op}</span>
+      if (p.desplegable) {
+        return (
+          <div>
+            <label htmlFor={`sel-${p.id}`} className="sr-only">
+              {p.titulo}
             </label>
-          ))}
-        </div>
-      );
+            <select
+              id={`sel-${p.id}`}
+              value={typeof valor === "string" ? valor : ""}
+              onChange={(e) => poner(p.id, e.target.value || undefined)}
+              aria-describedby={errorId}
+              aria-required={!p.opcional}
+              style={{ backgroundImage: FLECHA }}
+              className="min-h-[56px] w-full appearance-none rounded-2xl border border-white/20 bg-negro bg-[length:28px] bg-[right_12px_center] bg-no-repeat px-4 pr-12 text-base text-blanco focus:border-amarillo focus:outline focus:outline-[3px] focus:outline-offset-2 focus:outline-amarillo"
+            >
+              <option value="">Selecciona una opción</option>
+              {p.opciones.map((op) => (
+                <option key={op} value={op}>
+                  {op}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+      }
+      return <Radios nombre={p.id} opciones={p.opciones} valor={valor} alElegir={(op) => poner(p.id, op)} etiquetaId={etiqueta} errorId={errorId} />;
 
-    case "desplegable":
+    case "multiple": {
+      const marcadas = Array.isArray(valor) ? valor : [];
+      const lleno = p.max != null && marcadas.length >= p.max;
+      function alternar(op: string) {
+        if (marcadas.includes(op)) return poner(p.id, marcadas.filter((m) => m !== op));
+        // Las opciones como "Ninguna" o "Prefiero no responder" no se combinan con otras.
+        if (p.tipo === "multiple" && p.exclusivas?.includes(op)) return poner(p.id, [op]);
+        const resto = marcadas.filter((m) => !(p.tipo === "multiple" && p.exclusivas?.includes(m)));
+        if (p.tipo === "multiple" && p.max && resto.length >= p.max) return;
+        poner(p.id, [...resto, op]);
+      }
       return (
-        <div>
-          <label htmlFor="localidad" className="sr-only">
-            {p.titulo}
-          </label>
-          <select
-            id="localidad"
-            value={r.localidad ?? ""}
-            onChange={(e) => setR({ ...r, localidad: e.target.value || null })}
-            aria-describedby={errorId}
-            aria-required="true"
-            style={{ backgroundImage: FLECHA }}
-            className="min-h-[56px] w-full appearance-none rounded-2xl border border-white/20 bg-negro bg-[length:28px] bg-[right_12px_center] bg-no-repeat px-4 pr-12 text-base text-blanco focus:border-amarillo focus:outline focus:outline-[3px] focus:outline-offset-2 focus:outline-amarillo"
-          >
-            <option value="">Selecciona tu localidad</option>
-            {p.opciones.map((op) => (
-              <option key={op} value={op}>
-                {op}
-              </option>
-            ))}
-          </select>
-        </div>
-      );
-
-    case "multiple":
-      return (
-        <div role="group" aria-labelledby={etiqueta} aria-describedby={errorId} className="grid grid-cols-2 gap-2.5">
+        <div role="group" aria-labelledby={etiqueta} aria-describedby={errorId} className={`grid gap-2.5 ${columnas(p.opciones)}`}>
           {p.opciones.map((op) => {
-            const marcado = r.canales.includes(op);
+            const marcado = marcadas.includes(op);
+            const bloqueado = lleno && !marcado && !p.exclusivas?.includes(op);
             return (
-              <label key={op} className="opcion">
+              <label key={op} className={`opcion ${bloqueado ? "opacity-45" : ""}`}>
                 <input
                   type="checkbox"
                   className="peer sr-only"
                   checked={marcado}
-                  onChange={() =>
-                    setR({ ...r, canales: marcado ? r.canales.filter((c) => c !== op) : [...r.canales, op] })
-                  }
+                  onChange={() => alternar(op)}
+                  aria-disabled={bloqueado || undefined}
                 />
                 <span className="marca rounded-md peer-checked:border-amarillo peer-checked:bg-amarillo [&>svg]:opacity-0 peer-checked:[&>svg]:opacity-100">
                   <Chulo />
@@ -309,38 +409,77 @@ function Campo({
           })}
         </div>
       );
+    }
 
-    case "cuadricula":
+    case "escala":
       return (
-        <div className="grid gap-3" aria-describedby={errorId}>
-          {p.filas.map((f) => (
-            <div key={f.id} className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
-              <p id={`fila-${f.id}`} className="mb-3 font-semibold">
-                {f.etiqueta}
+        <div>
+          <div role="radiogroup" aria-labelledby={etiqueta} aria-describedby={errorId} className="grid grid-cols-5 gap-2">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <label
+                key={n}
+                className="grid h-14 cursor-pointer place-items-center rounded-xl border border-white/20 text-lg font-semibold transition hover:border-white/40 has-[:checked]:border-amarillo has-[:checked]:bg-amarillo has-[:checked]:text-negro has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-amarillo"
+              >
+                <input
+                  type="radio"
+                  name={p.id}
+                  value={n}
+                  className="sr-only"
+                  checked={valor === n}
+                  onChange={() => poner(p.id, n)}
+                  aria-label={`${n} de 5${n === 1 ? `: ${p.extremos[0]}` : n === 5 ? `: ${p.extremos[1]}` : ""}`}
+                />
+                {n}
+              </label>
+            ))}
+          </div>
+          <div className="mt-2 flex justify-between gap-4 text-xs text-white/55" aria-hidden="true">
+            <span>{p.extremos[0]}</span>
+            <span className="text-right">{p.extremos[1]}</span>
+          </div>
+        </div>
+      );
+
+    case "abierta": {
+      const texto = typeof valor === "string" ? valor : "";
+      return (
+        <div>
+          <label htmlFor={`txt-${p.id}`} className="sr-only">
+            {p.titulo}
+          </label>
+          <textarea
+            id={`txt-${p.id}`}
+            rows={4}
+            maxLength={p.max}
+            value={texto}
+            onChange={(e) => poner(p.id, e.target.value)}
+            placeholder="Escribe aquí tu respuesta"
+            aria-describedby={`cuenta-${p.id}${errorId ? ` ${errorId}` : ""}`}
+            className="w-full rounded-2xl border border-white/20 bg-negro px-4 py-3 text-base text-blanco placeholder:text-white/35 focus:border-amarillo focus:outline focus:outline-[3px] focus:outline-offset-2 focus:outline-amarillo"
+          />
+          <p id={`cuenta-${p.id}`} className="mt-1 text-right text-xs text-white/50">
+            {texto.length} / {p.max}
+          </p>
+        </div>
+      );
+    }
+
+    case "doble":
+      return (
+        <div className="grid gap-5">
+          {p.partes.map((pt) => (
+            <div key={pt.id}>
+              <p id={`parte-${pt.id}`} className="mb-2.5 text-sm font-semibold uppercase tracking-wider text-amarillo">
+                {pt.etiqueta}
               </p>
-              <div role="radiogroup" aria-labelledby={`fila-${f.id}`} className="grid grid-cols-5 gap-2">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <label
-                    key={n}
-                    className="grid h-12 cursor-pointer place-items-center rounded-xl border border-white/20 text-lg font-semibold transition hover:border-white/40 has-[:checked]:border-amarillo has-[:checked]:bg-amarillo has-[:checked]:text-negro has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-amarillo"
-                  >
-                    <input
-                      type="radio"
-                      name={f.id}
-                      value={n}
-                      className="sr-only"
-                      checked={r[f.id] === n}
-                      onChange={() => setR({ ...r, [f.id]: n })}
-                      aria-label={`${f.etiqueta}: ${n} de 5`}
-                    />
-                    {n}
-                  </label>
-                ))}
-              </div>
-              <div className="mt-1.5 flex justify-between text-[11px] text-white/50" aria-hidden="true">
-                <span>Muy mala</span>
-                <span>Excelente</span>
-              </div>
+              <Radios
+                nombre={pt.id}
+                opciones={pt.opciones}
+                valor={r[pt.id]}
+                alElegir={(op) => poner(pt.id, op)}
+                etiquetaId={`parte-${pt.id}`}
+                errorId={errorId}
+              />
             </div>
           ))}
         </div>

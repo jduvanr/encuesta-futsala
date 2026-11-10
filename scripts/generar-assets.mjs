@@ -92,7 +92,7 @@ const capa = `
     <text x="80" y="355" font-size="66" font-weight="700">de salón en <tspan fill="#FCD116">Bogotá</tspan>?</text>
     <text x="80" y="430" font-size="30" fill="#D6D6D6">Encuesta de futsala.co con la Liga de Fútbol de Salón de Bogotá</text>
     <rect x="80" y="475" width="330" height="70" rx="35" fill="#FCD116"/>
-    <text x="245" y="521" font-size="30" font-weight="700" fill="#0A0A0A" text-anchor="middle">Responde en 1 min</text>
+    <text x="245" y="521" font-size="30" font-weight="700" fill="#0A0A0A" text-anchor="middle">Responde en 3 min</text>
   </g>
 </svg>`;
 const logoF = await sharp(join(PUB, "logos", "futsala.png")).resize({ height: 104 }).toBuffer();

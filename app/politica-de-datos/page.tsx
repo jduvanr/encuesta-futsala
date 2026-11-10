@@ -27,13 +27,18 @@ export default function Politica() {
 
           <h2>2. Datos que recogemos</h2>
           <ul>
-            <li>Respuestas de la encuesta: rango de edad, localidad, hábitos y preferencias como aficionado, y calificación de los escenarios.</li>
+            <li>
+              Respuestas de la encuesta: tu rol (jugador, aficionado, cuerpo técnico u organizador), rango de edad, localidad y las
+              preguntas de tu rol, como hábitos de consumo, condiciones de trabajo, coberturas de salud y riesgos, y organización de
+              torneos.
+            </li>
             <li>El canal por el que llegaste a la encuesta (por ejemplo, un código QR o una red social).</li>
             <li>Opcionalmente, tu número de WhatsApp, solo si decides dejarlo al final.</li>
           </ul>
           <p className="mt-2">
             No pedimos tu nombre, documento ni correo. Tus respuestas son anónimas. El número de WhatsApp se guarda en una tabla
-            separada que no se puede relacionar con tus respuestas. Este estudio no recoge datos sensibles.
+            separada que no se puede relacionar con tus respuestas. Algunas preguntas tocan datos sensibles (ingresos, salud y
+            lesiones): no estás obligado a responderlas, son opcionales e incluyen la opción &quot;Prefiero no responder&quot;.
           </p>
 
           <h2>3. Finalidad</h2>
