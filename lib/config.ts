@@ -1,10 +1,10 @@
 /** Datos generales del sitio. Cambia aquí lo que necesites. */
 export const SITIO = {
   url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, ""),
-  titulo: "¿Cómo vives el fútbol de salón en Bogotá?",
+  titulo: "Tu VOZ también cuenta, micrero",
   descripcion:
-    "Estudio de futsala.co con la Liga de Fútbol de Salón de Bogotá. Elige tu rol y responde entre 3 y 4 minutos.",
-  tiempoEstimado: "3 a 4 minutos",
+    "Encuesta distrital del fútbol de salón y el microfútbol en Bogotá. Elige tu rol y responde en 2 a 4 minutos.",
+  tiempoEstimado: "2 a 4 minutos",
   // Correo para que los participantes ejerzan sus derechos (Ley 1581). CÁMBIALO por uno real.
   correoDatos: "futsalabogotatv@gmail.com",
   responsable: "futsala.co",

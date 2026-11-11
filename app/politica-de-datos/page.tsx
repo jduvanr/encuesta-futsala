@@ -28,7 +28,7 @@ export default function Politica() {
           <h2>2. Datos que recogemos</h2>
           <ul>
             <li>
-              Respuestas de la encuesta: tu rol (jugador, aficionado, cuerpo técnico u organizador), rango de edad, localidad y las
+              Respuestas de la encuesta: tu rol (jugador, aficionado, cuerpo técnico, organizador, periodista, creador de contenido o patrocinador), rango de edad, localidad y las
               preguntas de tu rol, como hábitos de consumo, condiciones de trabajo, coberturas de salud y riesgos, y organización de
               torneos.
             </li>

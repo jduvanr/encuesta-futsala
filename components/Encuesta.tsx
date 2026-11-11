@@ -157,13 +157,13 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
     return (
       <section className="tarjeta animate-aparece" aria-labelledby="titulo-encuesta">
         <Bandera className="mb-6 w-20" />
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amarillo">Estudio 2026</p>
-        <h1 id="titulo-encuesta" className="text-[28px] font-bold leading-tight sm:text-4xl">
-          {SITIO.titulo}
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amarillo">Encuesta distrital · Bogotá 2026</p>
+        <h1 id="titulo-encuesta" className="text-[44px] font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
+          Tu <span className="text-amarillo">voz</span> también cuenta, <span className="text-rojo">micrero</span>
         </h1>
-        <p className="mt-4 text-[15px] leading-relaxed text-white/80">
-          Estudio de futsala.co con la Liga de Fútbol de Salón de Bogotá. Primero eliges tu rol y luego respondes las preguntas
-          pensadas para ti.
+        <p className="mt-5 text-[15px] leading-relaxed text-white/80">
+          La gran encuesta del fútbol de salón y el microfútbol en las 20 localidades de Bogotá. Elige tu rol y responde las
+          preguntas pensadas para ti.
         </p>
         <ul className="mt-5 flex flex-wrap gap-2" aria-label="Encuestas disponibles">
           {ROLES.map((x) => (
@@ -200,7 +200,7 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
   const nBloque = BLOQUE_INICIAL.length;
   const enBloque = idx < nBloque;
   const totalGeneral = rol ? visibles.length : nBloque + MAS_LARGA;
-  const seccion = enBloque ? "Datos iniciales" : `Encuesta para ${rol!.corto.toLowerCase()}`;
+  const seccion = enBloque ? "Datos iniciales" : rol!.seccion;
   const numSeccion = enBloque ? idx + 1 : idx - nBloque + 1;
   const totalSeccion = enBloque ? nBloque : visibles.length - nBloque;
   const progreso = Math.round(((idx + 1) / totalGeneral) * 100);
@@ -283,7 +283,7 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
 function Ayuda({ pregunta: p }: { pregunta: Pregunta }) {
   let texto = p.ayuda;
   if (!texto && p.tipo === "multiple") texto = p.max ? `Elige máximo ${p.max} opciones.` : "Puedes marcar varias opciones.";
-  if (!texto && p.tipo === "escala") texto = `1 = ${p.extremos[0]} · 5 = ${p.extremos[1]}`;
+  if (!texto && (p.tipo === "escala" || p.tipo === "cuadricula")) texto = `1 = ${p.extremos[0]} · 5 = ${p.extremos[1]}`;
   return texto ? <p className="mt-1 text-sm text-white/65">{texto}</p> : null;
 }
 
@@ -463,6 +463,42 @@ function Campo({
         </div>
       );
     }
+
+    case "cuadricula":
+      return (
+        <div className="grid gap-3" aria-describedby={errorId}>
+          {p.filas.map((f) => (
+            <div key={f.id} className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
+              <p id={`fila-${f.id}`} className="mb-3 font-semibold">
+                {f.etiqueta}
+              </p>
+              <div role="radiogroup" aria-labelledby={`fila-${f.id}`} className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <label
+                    key={n}
+                    className="grid h-12 cursor-pointer place-items-center rounded-xl border border-white/20 text-lg font-semibold transition hover:border-white/40 has-[:checked]:border-amarillo has-[:checked]:bg-amarillo has-[:checked]:text-negro has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-amarillo"
+                  >
+                    <input
+                      type="radio"
+                      name={f.id}
+                      value={n}
+                      className="sr-only"
+                      checked={r[f.id] === n}
+                      onChange={() => poner(f.id, n)}
+                      aria-label={`${f.etiqueta}: ${n} de 5`}
+                    />
+                    {n}
+                  </label>
+                ))}
+              </div>
+              <div className="mt-1.5 flex justify-between text-[11px] text-white/50" aria-hidden="true">
+                <span>{p.extremos[0]}</span>
+                <span>{p.extremos[1]}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
 
     case "doble":
       return (

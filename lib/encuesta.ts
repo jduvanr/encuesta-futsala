@@ -1,7 +1,7 @@
 /**
  * Encuestas dirigidas futsala.co y Liga de Fútbol de Salón de Bogotá.
  *
- * Flujo: bloque inicial (B1 a B4) → la pregunta de rol (B2) decide cuál de las 4 encuestas sigue.
+ * Flujo: bloque inicial (B1 a B4) → la pregunta de rol (B2) decide cuál de las 7 encuestas sigue.
  * Todas las preguntas son obligatorias salvo las marcadas con `opcional: true`.
  * Si cambias opciones de B2, B3 o B4, actualiza también las restricciones en supabase/schema.sql.
  */
@@ -30,7 +30,8 @@ export type Pregunta =
   | (Base & { tipo: "multiple"; opciones: readonly string[]; max?: number; exclusivas?: readonly string[] })
   | (Base & { tipo: "escala"; extremos: readonly [string, string] })
   | (Base & { tipo: "abierta"; max: number })
-  | (Base & { tipo: "doble"; partes: readonly Parte[] });
+  | (Base & { tipo: "doble"; partes: readonly Parte[] })
+  | (Base & { tipo: "cuadricula"; filas: readonly { id: string; etiqueta: string }[]; extremos: readonly [string, string] });
 
 const NO_RESPONDER = "Prefiero no responder";
 
@@ -43,6 +44,9 @@ export const ROLES_ETIQUETAS = [
   "Aficionado o espectador",
   "Entrenador o cuerpo técnico",
   "Organizador de torneos o liga",
+  "Periodista",
+  "Creador de contenido",
+  "Patrocinador o marca",
 ] as const;
 
 export const LOCALIDADES = [
@@ -216,6 +220,29 @@ const JUGADORES: Pregunta[] = [
       "Falta de pago o apoyo", "Estado de los escenarios",
     ],
   },
+  {
+    id: "j16",
+    codigo: "J16",
+    tipo: "unica",
+    titulo: "¿Has visto decisiones de los árbitros que consideras erradas?",
+    opciones: ["Sí, con frecuencia", "A veces", "Rara vez", "Nunca"],
+  },
+  {
+    id: "j17",
+    codigo: "J17",
+    tipo: "unica",
+    titulo: "¿Crees que esas decisiones erradas influyen en el resultado de los partidos?",
+    opciones: ["Sí, mucho", "Algo", "Poco", "Nada"],
+    // Solo si en J16 no respondió "Nunca"
+    mostrar: (r) => Boolean(r.j16) && r.j16 !== "Nunca",
+  },
+  {
+    id: "j18",
+    codigo: "J18",
+    tipo: "escala",
+    titulo: "¿Cómo percibes el trato de los jueces y árbitros hacia los jugadores?",
+    extremos: ["Muy malo", "Muy bueno"],
+  },
   { id: "j15", codigo: "J15", tipo: "abierta", opcional: true, max: 300, titulo: "¿Qué cambiarías del fútbol de salón en Bogotá?" },
 ];
 
@@ -291,6 +318,159 @@ const AFICIONADOS: Pregunta[] = [
     max: 2,
     titulo: "¿Qué contenido te gustaría ver más?",
     opciones: ["Entrevistas", "Mejores jugadas", "Estadísticas", "Detrás de cámaras"],
+  },
+  {
+    id: "a13",
+    codigo: "A13",
+    tipo: "unica",
+    opcional: true,
+    titulo: "¿Alguna vez has hecho apuestas deportivas?",
+    opciones: ["Sí, en partidos de microfútbol o fútbol de salón", "Sí, pero solo en otros deportes", "No, nunca", NO_RESPONDER],
+  },
+];
+
+// ── Periodistas ─────────────────────────────────────────────────────
+const PERIODISTAS: Pregunta[] = [
+  {
+    id: "pe1",
+    codigo: "PE1",
+    tipo: "unica",
+    titulo: "¿En qué tipo de medio trabajas?",
+    opciones: ["Prensa escrita", "Radio", "Televisión", "Medio digital", "Independiente"],
+  },
+  {
+    id: "pe2",
+    codigo: "PE2",
+    tipo: "unica",
+    titulo: "¿Con qué frecuencia cubres fútbol de salón o microfútbol?",
+    opciones: ["Cada semana", "Cada mes", "Solo eventos especiales", "Casi nunca"],
+  },
+  {
+    id: "pe3",
+    codigo: "PE3",
+    tipo: "multiple",
+    titulo: "¿Qué torneos cubres más?",
+    opciones: ["Liga de Bogotá", "Liga nacional", "Torneos de barrio", "Torneos de colegios", "Selecciones"],
+  },
+  {
+    id: "pe4",
+    codigo: "PE4",
+    tipo: "cuadricula",
+    titulo: "Califica de 1 a 5",
+    extremos: ["Muy malo", "Muy bueno"],
+    filas: [
+      { id: "pe4_escenarios", etiqueta: "Acceso a escenarios" },
+      { id: "pe4_datos", etiqueta: "Acceso a datos y resultados" },
+      { id: "pe4_atencion", etiqueta: "Atención de ligas y organizadores" },
+      { id: "pe4_audiencia", etiqueta: "Interés de la audiencia" },
+    ],
+  },
+  {
+    id: "pe5",
+    codigo: "PE5",
+    tipo: "unica",
+    titulo: "¿Cuál es tu mayor dificultad para cubrir este deporte?",
+    opciones: ["Falta de información oficial", "Acceso a partidos", "Poco espacio en el medio", "Falta de recursos", "Otro"],
+  },
+  {
+    id: "pe6",
+    codigo: "PE6",
+    tipo: "unica",
+    titulo: "¿Te serviría recibir resultados, estadísticas y fotos oficiales de la liga?",
+    opciones: ["Sí", "No", "Tal vez"],
+  },
+];
+
+// ── Creadores de contenido ──────────────────────────────────────────
+const CREADORES: Pregunta[] = [
+  {
+    id: "cr1",
+    codigo: "CR1",
+    tipo: "multiple",
+    titulo: "¿En qué plataformas publicas?",
+    opciones: ["Instagram", "Facebook", "TikTok", "YouTube", "Twitch", "Kick", "WhatsApp"],
+  },
+  {
+    id: "cr2",
+    codigo: "CR2",
+    tipo: "unica",
+    titulo: "¿Qué formato te da más alcance?",
+    opciones: ["Transmisiones en vivo", "Reels o videos cortos", "Fotos y carruseles", "Resúmenes", "Historias"],
+  },
+  {
+    id: "cr3",
+    codigo: "CR3",
+    tipo: "unica",
+    titulo: "¿Cuál es tu mayor dificultad?",
+    opciones: ["Acceso a escenarios", "Internet en escenarios", "Equipos", "Monetización", "Tiempo"],
+  },
+  {
+    id: "cr4",
+    codigo: "CR4",
+    tipo: "multiple",
+    titulo: "¿Cómo generas ingresos con tu contenido?",
+    opciones: ["Patrocinios", "Pago de organizadores", "Pago de equipos", "Monetización de plataformas", "Todavía no genero ingresos"],
+    exclusivas: ["Todavía no genero ingresos"],
+  },
+  {
+    id: "cr5",
+    codigo: "CR5",
+    tipo: "unica",
+    titulo: "¿Tienes alianzas con ligas u organizadores?",
+    opciones: ["Sí", "No", "Estoy buscando"],
+  },
+  {
+    id: "cr6",
+    codigo: "CR6",
+    tipo: "unica",
+    titulo: "¿Te interesaría trabajar en red con otros creadores del deporte?",
+    opciones: ["Sí", "No", "Tal vez"],
+  },
+];
+
+// ── Patrocinadores ──────────────────────────────────────────────────
+const PATROCINADORES: Pregunta[] = [
+  {
+    id: "pa1",
+    codigo: "PA1",
+    tipo: "unica",
+    titulo: "¿A qué se dedica tu negocio?",
+    opciones: ["Comidas y bebidas", "Ropa y deporte", "Salud y bienestar", "Servicios", "Comercio de barrio", "Otro"],
+  },
+  {
+    id: "pa2",
+    codigo: "PA2",
+    tipo: "unica",
+    titulo: "¿Has patrocinado equipos o torneos de microfútbol?",
+    opciones: ["Sí, varias veces", "Sí, una vez", "No, pero me interesa", "No"],
+  },
+  {
+    id: "pa3",
+    codigo: "PA3",
+    tipo: "multiple",
+    titulo: "¿Qué tipo de patrocinio das o darías?",
+    opciones: ["Dinero", "Uniformes", "Premios", "Productos", "Descuentos"],
+  },
+  {
+    id: "pa4",
+    codigo: "PA4",
+    tipo: "unica",
+    titulo: "¿Qué esperas a cambio?",
+    opciones: ["Visibilidad", "Ventas", "Imagen en el barrio", "Apoyar el deporte"],
+  },
+  {
+    id: "pa5",
+    codigo: "PA5",
+    tipo: "unica",
+    titulo: "¿Te interesaría aparecer en transmisiones en vivo y redes sociales?",
+    opciones: ["Sí", "No", "Tal vez"],
+  },
+  {
+    id: "pa6",
+    codigo: "PA6",
+    tipo: "unica",
+    titulo: "¿Cuánto podrías invertir por torneo?",
+    opciones: ["Menos de $200.000", "$200.000 a $500.000", "$500.000 a $1.000.000", "Más de $1.000.000", "Solo en especie"],
   },
 ];
 
@@ -445,13 +625,22 @@ const ORGANIZADORES: Pregunta[] = [
 ];
 
 // ── Roles ───────────────────────────────────────────────────────────
-export type Rol = { etiqueta: (typeof ROLES_ETIQUETAS)[number]; corto: string; preguntas: Pregunta[] };
+export type Rol = {
+  etiqueta: (typeof ROLES_ETIQUETAS)[number];
+  corto: string;
+  /** Título de la sección que se ve en la barra de progreso. */
+  seccion: string;
+  preguntas: Pregunta[];
+};
 
 export const ROLES: Rol[] = [
-  { etiqueta: "Jugador o jugadora", corto: "Jugadores", preguntas: JUGADORES },
-  { etiqueta: "Aficionado o espectador", corto: "Aficionados", preguntas: AFICIONADOS },
-  { etiqueta: "Entrenador o cuerpo técnico", corto: "Cuerpo técnico", preguntas: TECNICOS },
-  { etiqueta: "Organizador de torneos o liga", corto: "Organizadores", preguntas: ORGANIZADORES },
+  { etiqueta: "Jugador o jugadora", corto: "Jugadores", seccion: "Encuesta para jugadores", preguntas: JUGADORES },
+  { etiqueta: "Aficionado o espectador", corto: "Aficionados", seccion: "Encuesta para aficionados", preguntas: AFICIONADOS },
+  { etiqueta: "Entrenador o cuerpo técnico", corto: "Cuerpo técnico", seccion: "Encuesta para cuerpo técnico", preguntas: TECNICOS },
+  { etiqueta: "Organizador de torneos o liga", corto: "Organizadores", seccion: "Encuesta para organizadores", preguntas: ORGANIZADORES },
+  { etiqueta: "Periodista", corto: "Periodistas", seccion: "El fútbol de salón visto desde los medios", preguntas: PERIODISTAS },
+  { etiqueta: "Creador de contenido", corto: "Creadores de contenido", seccion: "Creadores del fútbol de salón en Bogotá", preguntas: CREADORES },
+  { etiqueta: "Patrocinador o marca", corto: "Patrocinadores", seccion: "Marcas que apoyan el fútbol de salón", preguntas: PATROCINADORES },
 ];
 
 export const rolDe = (etiqueta: unknown) => ROLES.find((x) => x.etiqueta === etiqueta);
@@ -466,6 +655,7 @@ export function preguntasVisibles(r: Respuestas): Pregunta[] {
 /** Claves de respuesta de una pregunta (la doble guarda dos) con su etiqueta para el CSV. */
 export function clavesDe(p: Pregunta): { clave: string; etiqueta: string }[] {
   if (p.tipo === "doble") return p.partes.map((pt) => ({ clave: pt.id, etiqueta: `${p.codigo} ${pt.etiqueta}` }));
+  if (p.tipo === "cuadricula") return p.filas.map((f) => ({ clave: f.id, etiqueta: `${p.codigo} ${f.etiqueta}` }));
   return [{ clave: p.id, etiqueta: `${p.codigo} ${p.titulo}` }];
 }
 
@@ -504,6 +694,8 @@ export function validar(p: Pregunta, r: Respuestas): string | null {
       return vacio(v) ? "Escribe tu respuesta para continuar." : null;
     case "doble":
       return p.partes.every((pt) => r[pt.id]) ? null : "Responde las dos partes para continuar.";
+    case "cuadricula":
+      return p.filas.every((f) => r[f.id] != null) ? null : "Califica todas las filas para continuar.";
   }
 }
 

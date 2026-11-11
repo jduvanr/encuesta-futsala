@@ -20,7 +20,7 @@ export default async function Inicio() {
         <Encuesta qrYoutube={qrYoutube} />
       </main>
       <footer className="mx-auto max-w-xl px-5 pb-8 text-center text-xs text-white/50">
-        © {new Date().getFullYear()} futsala.co · Liga de Fútbol de Salón de Bogotá ·{" "}
+        © {new Date().getFullYear()} futsala.co · Encuesta distrital de fútbol de salón ·{" "}
         <Link href="/politica-de-datos" className="underline underline-offset-2 hover:text-white">
           Tratamiento de datos
         </Link>

@@ -88,11 +88,11 @@ const capa = `
   <rect width="1200" height="630" fill="url(#g)"/>
   <rect x="80" y="170" width="90" height="12" fill="#FCD116"/><rect x="170" y="170" width="90" height="12" fill="#CE1126"/>
   <g font-family="Arial, Helvetica, sans-serif" fill="#FFFFFF">
-    <text x="80" y="275" font-size="66" font-weight="700">¿Cómo vives el fútbol</text>
-    <text x="80" y="355" font-size="66" font-weight="700">de salón en <tspan fill="#FCD116">Bogotá</tspan>?</text>
-    <text x="80" y="430" font-size="30" fill="#D6D6D6">Encuesta de futsala.co con la Liga de Fútbol de Salón de Bogotá</text>
+    <text x="80" y="275" font-size="74" font-weight="700">TU <tspan fill="#FCD116">VOZ</tspan> TAMBIÉN</text>
+    <text x="80" y="360" font-size="74" font-weight="700">CUENTA, <tspan fill="#CE1126">MICRERO</tspan></text>
+    <text x="80" y="430" font-size="30" fill="#D6D6D6">Encuesta distrital del fútbol de salón y el microfútbol en Bogotá</text>
     <rect x="80" y="475" width="330" height="70" rx="35" fill="#FCD116"/>
-    <text x="245" y="521" font-size="30" font-weight="700" fill="#0A0A0A" text-anchor="middle">Responde en 3 min</text>
+    <text x="245" y="521" font-size="30" font-weight="700" fill="#0A0A0A" text-anchor="middle">Responde aquí</text>
   </g>
 </svg>`;
 const logoF = await sharp(join(PUB, "logos", "futsala.png")).resize({ height: 104 }).toBuffer();

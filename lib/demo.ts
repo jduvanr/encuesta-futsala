@@ -22,7 +22,7 @@ export function datosDemo(n = 160): FilaRespuesta[] {
   }
 
   return Array.from({ length: n }, (_, i) => {
-    const rol = elegir(ROLES, [40, 35, 15, 10]);
+    const rol = elegir(ROLES, [32, 30, 12, 8, 6, 7, 5]);
     const r: Respuestas = {
       rol: rol.etiqueta,
       localidad: elegir(LOCALIDADES),
@@ -49,6 +49,9 @@ export function datosDemo(n = 160): FilaRespuesta[] {
           break;
         case "abierta":
           if (rnd() < 0.4) poner(p.id, elegir(TEXTOS));
+          break;
+        case "cuadricula":
+          for (const f of p.filas) poner(f.id, 1 + Math.floor(rnd() * 5));
           break;
         case "doble":
           for (const pt of p.partes) poner(pt.id, elegir(pt.opciones));

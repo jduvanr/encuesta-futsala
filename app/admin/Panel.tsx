@@ -214,6 +214,37 @@ function GraficaPregunta({ p, filas }: { p: Pregunta; filas: FilaRespuesta[] }) 
         </Tarjeta>
       );
     }
+    case "cuadricula": {
+      const promedios = p.filas.map((fila) => {
+        const notas = filas.map((f) => f.detalle?.[fila.id]).filter((v): v is number => typeof v === "number");
+        const valor = notas.length ? notas.reduce((s, v) => s + v, 0) / notas.length : 0;
+        return { nombre: fila.etiqueta, valor: Number(valor.toFixed(2)), pct: (valor / 5) * 100, n: notas.length };
+      });
+      return (
+        <Tarjeta titulo={titulo} nota={`Promedio sobre 5 · 1 = ${p.extremos[0]} · 5 = ${p.extremos[1]}`}
+          datos={promedios.map((x) => ({
+            nombre: `${x.nombre} (promedio ${x.n ? fmtNum(x.valor) : "—"})`,
+            valor: x.n,
+            pct: filas.length ? (x.n / filas.length) * 100 : 0,
+          }))}
+        >
+          <ul className="grid gap-3">
+            {promedios.map((x) => (
+              <li key={x.nombre}>
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span>{x.nombre}</span>
+                  <span className="text-xl font-bold tabular-nums">{x.n ? fmtNum(x.valor) : "—"}</span>
+                </div>
+                <div className="mt-1 h-2 rounded-full bg-white/10" aria-hidden="true">
+                  <div className="h-full rounded-full bg-amarillo" style={{ width: `${x.pct}%` }} />
+                </div>
+                <p className="mt-0.5 text-[11px] text-white/50">{x.n} calificaciones</p>
+              </li>
+            ))}
+          </ul>
+        </Tarjeta>
+      );
+    }
     case "doble":
       return (
         <>
@@ -322,7 +353,7 @@ export function Panel({ filas, totalContactos, aviso }: { filas: FilaRespuesta[]
         <div>
           <Bandera className="mb-3 w-16" />
           <h1 className="text-2xl font-bold">Resultados de la encuesta</h1>
-          <p className="text-sm text-white/60">Encuestas dirigidas futsala.co y Liga de Fútbol de Salón de Bogotá</p>
+          <p className="text-sm text-white/60">Encuesta distrital de fútbol de salón · futsala.co</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={descargarCsv} className="btn-primario min-h-[44px] text-sm" disabled={!filas.length}>
@@ -417,7 +448,7 @@ export function Panel({ filas, totalContactos, aviso }: { filas: FilaRespuesta[]
           <div className="mt-3 grid gap-4 lg:grid-cols-2">
             {!rol && (
               <Tarjeta titulo="Rol" datos={g.rol}>
-                <Torta datos={g.rol} />
+                <Barras datos={g.rol} />
               </Tarjeta>
             )}
             <Tarjeta titulo="Rango de edad" datos={g.edad}>

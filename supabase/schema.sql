@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════════
 -- Encuestas dirigidas futsala.co y Liga de Fútbol de Salón de Bogotá
--- (jugadores, aficionados, cuerpo técnico y organizadores)
+-- (jugadores, aficionados, cuerpo técnico, organizadores, periodistas, creadores y patrocinadores)
 -- Pega todo este archivo en Supabase → SQL Editor → Run.
 -- Se puede ejecutar varias veces sin romper nada.
 -- ═══════════════════════════════════════════════════════════════════
@@ -9,14 +9,12 @@
 -- El id lo genera el navegador y se guarda en localStorage: si la misma
 -- persona intenta enviar dos veces, la llave primaria lo rechaza.
 -- El bloque inicial (rol, localidad, edad) va en columnas; las respuestas
--- propias de cada rol (J1…J15, A1…A12, T1…T11, O1…O12) van en "detalle" (JSON).
+-- propias de cada rol (J1…J18, A1…A13, T1…T11, O1…O12, PE1…PE6, CR1…CR6, PA1…PA6) van en "detalle" (JSON).
 create table if not exists public.respuestas_roles (
   id            uuid primary key,
   fecha         timestamptz not null default now(),
   autorizacion  boolean not null check (autorizacion = true),
-  rol           text not null check (rol in (
-                  'Jugador o jugadora','Aficionado o espectador',
-                  'Entrenador o cuerpo técnico','Organizador de torneos o liga')),
+  rol           text not null,
   localidad     text not null check (localidad in (
                   'Usaquén','Chapinero','Santa Fe','San Cristóbal','Usme','Tunjuelito','Bosa',
                   'Kennedy','Fontibón','Engativá','Suba','Barrios Unidos','Teusaquillo',
@@ -28,6 +26,12 @@ create table if not exists public.respuestas_roles (
                   check (jsonb_typeof(detalle) = 'object' and pg_column_size(detalle) <= 8192),
   origen        text check (char_length(origen) <= 100)
 );
+
+-- Roles válidos. Se define aparte para que, al volver a correr el archivo, se actualice la lista.
+alter table public.respuestas_roles drop constraint if exists respuestas_roles_rol_check;
+alter table public.respuestas_roles add constraint respuestas_roles_rol_check check (rol in (
+  'Jugador o jugadora','Aficionado o espectador','Entrenador o cuerpo técnico',
+  'Organizador de torneos o liga','Periodista','Creador de contenido','Patrocinador o marca'));
 
 create index if not exists respuestas_roles_fecha_idx on public.respuestas_roles (fecha desc);
 create index if not exists respuestas_roles_rol_idx on public.respuestas_roles (rol);

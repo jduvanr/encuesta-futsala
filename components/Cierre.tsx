@@ -25,7 +25,7 @@ export function Cierre({ qrYoutube, yaRespondio }: { qrYoutube: string; yaRespon
     if (leerEstado()?.contacto) setEstadoTel("ok");
   }, []);
 
-  const textoCompartir = `${SITIO.titulo} Responde la encuesta de futsala.co y la Liga de Fútbol de Salón de Bogotá (3 a 4 minutos): ${SITIO.url}/?utm_source=whatsapp`;
+  const textoCompartir = `${SITIO.titulo}. Responde la encuesta distrital del fútbol de salón y el microfútbol en Bogotá (${SITIO.tiempoEstimado}): ${SITIO.url}/?utm_source=whatsapp`;
 
   async function guardarTel(e: React.FormEvent) {
     e.preventDefault();
