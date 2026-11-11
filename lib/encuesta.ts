@@ -101,7 +101,7 @@ const JUGADORES: Pregunta[] = [
     tipo: "doble",
     titulo: "¿En qué categoría y rama juegas?",
     partes: [
-      { id: "j1_categoria", etiqueta: "Categoría", opciones: ["Infantil", "Juvenil", "Mayores", "Sénior"] },
+      { id: "j1_categoria", etiqueta: "Categoría", opciones: ["Infantil", "Juvenil", "Única", "Veteranos", "Máster"] },
       { id: "j1_rama", etiqueta: "Rama", opciones: ["Masculina", "Femenina", "Mixta"] },
     ],
   },

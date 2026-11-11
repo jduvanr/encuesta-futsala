@@ -125,7 +125,19 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
     } else irA(idx - 1, "atras");
   }
 
-  if (fase === "fin") return <Cierre qrYoutube={qrYoutube} yaRespondio={yaRespondio} />;
+  // Otra persona va a responder en este mismo dispositivo: identificador nuevo y encuesta en blanco.
+  function nuevaPersona() {
+    guardarEstado({ id: nuevoId(), enviado: false });
+    setR({});
+    setPasoId(PRIMERA);
+    setYaRespondio(false);
+    setError(null);
+    setDireccion("adelante");
+    setFase("inicio");
+    window.scrollTo({ top: 0 });
+  }
+
+  if (fase === "fin") return <Cierre qrYoutube={qrYoutube} yaRespondio={yaRespondio} onNuevaPersona={nuevaPersona} />;
 
   if (fase === "sin-autorizacion") {
     return (

@@ -14,7 +14,15 @@ const REDES_BOTONES: { nombre: NombreIcono; red: string; usuario: string; href: 
   { nombre: "facebook", red: "Facebook", usuario: "futsala.co", href: REDES.facebook },
 ];
 
-export function Cierre({ qrYoutube, yaRespondio }: { qrYoutube: string; yaRespondio: boolean }) {
+export function Cierre({
+  qrYoutube,
+  yaRespondio,
+  onNuevaPersona,
+}: {
+  qrYoutube: string;
+  yaRespondio: boolean;
+  onNuevaPersona: () => void;
+}) {
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const [tel, setTel] = useState("");
   const [estadoTel, setEstadoTel] = useState<"inicial" | "enviando" | "ok" | "error">("inicial");
@@ -155,6 +163,14 @@ export function Cierre({ qrYoutube, yaRespondio }: { qrYoutube: string; yaRespon
       >
         <Icono nombre="whatsapp" /> Compartir por WhatsApp
       </a>
+
+      {/* Varias personas en el mismo dispositivo (p. ej. un celular o tablet en el escenario) */}
+      <div className="mt-6 border-t border-white/10 pt-6 text-center">
+        <p className="text-sm text-white/70">¿Alguien más quiere responder en este dispositivo?</p>
+        <button type="button" onClick={onNuevaPersona} className="btn-secundario mt-3 w-full">
+          Responder otra encuesta
+        </button>
+      </div>
     </section>
   );
 }
