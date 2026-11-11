@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { Bandera } from "@/components/Encabezado";
 import { aCsv } from "@/lib/csv";
-import { EDADES, LOCALIDADES, ROLES, ROLES_ETIQUETAS, clavesDe, type Pregunta, type Rol, type Valor } from "@/lib/encuesta";
+import { CLAVE_APOYO, EDADES, LOCALIDADES, ROLES, ROLES_ETIQUETAS, clavesDe, type Pregunta, type Rol, type Valor } from "@/lib/encuesta";
 import type { FilaRespuesta } from "@/lib/tipos";
 
 // Paleta categórica validada (OKLCH, daltonismo y contraste) sobre la superficie oscura #141414.
@@ -313,6 +313,13 @@ export function Panel({ filas, totalContactos, aviso }: { filas: FilaRespuesta[]
       edad: conteo(filtradas, (f) => f.edad, EDADES),
       localidad: conteo(filtradas, (f) => f.localidad, LOCALIDADES).sort((a, b) => b.valor - a.valor),
       origen: conteo(filtradas, (f) => f.origen ?? "directo", origenes).sort((a, b) => b.valor - a.valor),
+      apoyo: ROLES.map((x) => {
+        const notas = filtradas
+          .filter((f) => f.rol === x.etiqueta)
+          .map((f) => f.detalle?.[CLAVE_APOYO])
+          .filter((v): v is number => typeof v === "number");
+        return { nombre: x.corto, n: notas.length, prom: notas.length ? notas.reduce((s, v) => s + v, 0) / notas.length : 0 };
+      }),
     };
   }, [filtradas]);
 
@@ -320,7 +327,15 @@ export function Panel({ filas, totalContactos, aviso }: { filas: FilaRespuesta[]
     // Con un rol elegido: solo sus filas y sus columnas. Con "Todos": todas las filas y las columnas de los 4 roles.
     const roles = rol ? [rol] : ROLES;
     const filasCsv = rol ? filas.filter((f) => f.rol === rol.etiqueta) : filas;
-    const claves = roles.flatMap((x) => x.preguntas.flatMap(clavesDe));
+    // La pregunta de apoyo institucional usa la misma clave en todos los roles: una sola columna.
+    const claves = roles
+      .flatMap((x) => x.preguntas.flatMap(clavesDe))
+      .filter((c, i, arr) => arr.findIndex((o) => o.clave === c.clave) === i)
+      .map((c) =>
+        c.clave === CLAVE_APOYO && !rol
+          ? { ...c, etiqueta: "Apoyo de instituciones distritales y locales (todos los roles)" }
+          : c,
+      );
     const base = ["id", "fecha", "rol", "localidad", "edad", "origen"] as const;
     const celda = (v: Valor | undefined) => (Array.isArray(v) ? v.join(", ") : v);
     const csv = aCsv(
@@ -476,9 +491,32 @@ export function Panel({ filas, totalContactos, aviso }: { filas: FilaRespuesta[]
               </div>
             </>
           ) : (
-            <p className="mt-8 rounded-2xl border border-white/10 bg-[#141414] p-4 text-sm text-white/70">
-              Elige un rol arriba para ver las gráficas de sus preguntas.
-            </p>
+            <>
+              <h2 className="mt-8 text-lg font-bold">Pregunta común a todos los roles</h2>
+              <div className="mt-3 grid gap-4">
+                <section className="rounded-3xl border border-white/10 bg-[#141414] p-5">
+                  <h3 className="font-bold leading-snug">Apoyo de las instituciones distritales y locales (IDRD, alcaldías locales)</h3>
+                  <p className="mt-0.5 text-xs text-white/55">Promedio por rol, de 1 (muy malo) a 5 (muy bueno)</p>
+                  <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {g.apoyo.map((x) => (
+                      <li key={x.nombre} className="rounded-2xl border border-white/10 p-4">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="text-sm">{x.nombre}</span>
+                          <span className="text-2xl font-bold tabular-nums">{x.n ? fmtNum(x.prom) : "—"}</span>
+                        </div>
+                        <div className="mt-2 h-2 rounded-full bg-white/10" aria-hidden="true">
+                          <div className="h-full rounded-full bg-amarillo" style={{ width: `${(x.prom / 5) * 100}%` }} />
+                        </div>
+                        <p className="mt-1 text-[11px] text-white/50">{x.n} calificaciones</p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              </div>
+              <p className="mt-6 rounded-2xl border border-white/10 bg-[#141414] p-4 text-sm text-white/70">
+                Elige un rol arriba para ver las gráficas de sus preguntas.
+              </p>
+            </>
           )}
         </>
       )}

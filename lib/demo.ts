@@ -22,7 +22,7 @@ export function datosDemo(n = 160): FilaRespuesta[] {
   }
 
   return Array.from({ length: n }, (_, i) => {
-    const rol = elegir(ROLES, [32, 30, 12, 8, 6, 7, 5]);
+    const rol = elegir(ROLES, [30, 28, 11, 8, 6, 7, 5, 5]);
     const r: Respuestas = {
       rol: rol.etiqueta,
       localidad: elegir(LOCALIDADES),

@@ -1,7 +1,7 @@
 /**
  * Encuestas dirigidas futsala.co y Liga de Fútbol de Salón de Bogotá.
  *
- * Flujo: bloque inicial (B1 a B4) → la pregunta de rol (B2) decide cuál de las 7 encuestas sigue.
+ * Flujo: bloque inicial (B1 a B4) → la pregunta de rol (B2) decide cuál de las 8 encuestas sigue.
  * Todas las preguntas son obligatorias salvo las marcadas con `opcional: true`.
  * Si cambias opciones de B2, B3 o B4, actualiza también las restricciones en supabase/schema.sql.
  */
@@ -47,6 +47,7 @@ export const ROLES_ETIQUETAS = [
   "Periodista",
   "Creador de contenido",
   "Patrocinador o marca",
+  "Árbitro o juez",
 ] as const;
 
 export const LOCALIDADES = [
@@ -88,6 +89,22 @@ export const BLOQUE_INICIAL: Pregunta[] = [
   },
   { id: "edad", codigo: "B4", tipo: "unica", titulo: "¿En qué rango de edad estás?", opciones: EDADES },
 ];
+
+// ── Pregunta común a todos los roles ────────────────────────────────
+/**
+ * Misma clave ("apoyo_instituciones") en todos los roles, para comparar en el panel.
+ * Solo cambia el código que se ve (J28, A14, T13…).
+ */
+export const CLAVE_APOYO = "apoyo_instituciones";
+function apoyoInstitucional(codigo: string): Pregunta {
+  return {
+    id: CLAVE_APOYO,
+    codigo,
+    tipo: "escala",
+    titulo: "¿Cómo calificas el apoyo de las instituciones distritales y locales (IDRD, alcaldías locales) al fútbol de salón?",
+    extremos: ["Muy malo", "Muy bueno"],
+  };
+}
 
 // ── Jugadores ───────────────────────────────────────────────────────
 /** Infantil o Juvenil y menor de 18: salta J3 a J12 y pasa a J13. */
@@ -220,6 +237,63 @@ const JUGADORES: Pregunta[] = [
       "Falta de pago o apoyo", "Estado de los escenarios",
     ],
   },
+  // Apoyos e incentivos
+  {
+    id: "j19",
+    codigo: "J19",
+    tipo: "unica",
+    titulo: "¿En algún momento has recibido apoyo de la liga?",
+    opciones: ["Sí, varias veces", "Sí, una vez", "No, nunca"],
+  },
+  {
+    id: "j20",
+    codigo: "J20",
+    tipo: "multiple",
+    titulo: "¿Has recibido incentivos por jugar de alguna de estas entidades?",
+    ayuda: "Por ejemplo: auxilio de transporte, alimentación, implementación o pago. Puedes marcar varias.",
+    opciones: ["IDRD", "Alcaldía local", "Una liga", "Una selección", "No he recibido incentivos"],
+    exclusivas: ["No he recibido incentivos"],
+  },
+  {
+    id: "j21",
+    codigo: "J21",
+    tipo: "unica",
+    titulo: "¿Has recibido reconocimientos o apoyos de instituciones como el IDRD?",
+    opciones: ["Sí, reconocimientos (premios o menciones)", "Sí, apoyos (económicos o en especie)", "Sí, ambos", "No"],
+  },
+  // Torneos
+  {
+    id: "j22",
+    codigo: "J22",
+    tipo: "escala",
+    titulo: "¿Qué tan atractivos te parecen los torneos con buenas premiaciones?",
+    extremos: ["Nada atractivos", "Muy atractivos"],
+  },
+  {
+    id: "j23",
+    codigo: "J23",
+    tipo: "unica",
+    titulo: "¿Prefieres jugar torneos a nivel de barrio o a nivel distrital?",
+    opciones: ["A nivel de barrio", "A nivel distrital", "Ambos por igual"],
+  },
+  {
+    id: "j24",
+    codigo: "J24",
+    tipo: "unica",
+    titulo: "En promedio, ¿cuánto debería ganar al mes un jugador de fútbol de salón?",
+    opciones: [
+      "Menos de 1 salario mínimo", "1 salario mínimo", "Entre 1 y 2 salarios mínimos",
+      "Entre 2 y 4 salarios mínimos", "Más de 4 salarios mínimos", "No sé",
+    ],
+  },
+  {
+    id: "j25",
+    codigo: "J25",
+    tipo: "unica",
+    titulo: "¿Hace cuánto participas en torneos de barrio?",
+    opciones: ["Menos de 1 año", "1 a 3 años", "4 a 6 años", "Más de 6 años", "No juego torneos de barrio"],
+  },
+  // Árbitros
   {
     id: "j16",
     codigo: "J16",
@@ -243,7 +317,30 @@ const JUGADORES: Pregunta[] = [
     titulo: "¿Cómo percibes el trato de los jueces y árbitros hacia los jugadores?",
     extremos: ["Muy malo", "Muy bueno"],
   },
-  { id: "j15", codigo: "J15", tipo: "abierta", opcional: true, max: 300, titulo: "¿Qué cambiarías del fútbol de salón en Bogotá?" },
+  {
+    id: "j26",
+    codigo: "J26",
+    tipo: "unica",
+    titulo: "¿Con qué frecuencia tienes discusiones con los jueces o árbitros?",
+    opciones: ["Nunca", "Rara vez", "A veces", "Con frecuencia"],
+  },
+  // Instituciones
+  {
+    id: "j27",
+    codigo: "J27",
+    tipo: "unica",
+    titulo: "¿Crees que falta más apoyo de las instituciones al fútbol de salón?",
+    opciones: ["Sí, mucho más", "Sí, algo más", "No, el apoyo es suficiente", "No sé"],
+  },
+  apoyoInstitucional("J28"),
+  {
+    id: "j15",
+    codigo: "J15",
+    tipo: "abierta",
+    opcional: true,
+    max: 500,
+    titulo: "Danos una idea general de cómo mejorar el fútbol de salón",
+  },
 ];
 
 // ── Aficionados ─────────────────────────────────────────────────────
@@ -327,6 +424,7 @@ const AFICIONADOS: Pregunta[] = [
     titulo: "¿Alguna vez has hecho apuestas deportivas?",
     opciones: ["Sí, en partidos de microfútbol o fútbol de salón", "Sí, pero solo en otros deportes", "No, nunca", NO_RESPONDER],
   },
+  apoyoInstitucional("A14"),
 ];
 
 // ── Periodistas ─────────────────────────────────────────────────────
@@ -379,6 +477,7 @@ const PERIODISTAS: Pregunta[] = [
     titulo: "¿Te serviría recibir resultados, estadísticas y fotos oficiales de la liga?",
     opciones: ["Sí", "No", "Tal vez"],
   },
+  apoyoInstitucional("PE7"),
 ];
 
 // ── Creadores de contenido ──────────────────────────────────────────
@@ -426,6 +525,7 @@ const CREADORES: Pregunta[] = [
     titulo: "¿Te interesaría trabajar en red con otros creadores del deporte?",
     opciones: ["Sí", "No", "Tal vez"],
   },
+  apoyoInstitucional("CR7"),
 ];
 
 // ── Patrocinadores ──────────────────────────────────────────────────
@@ -472,6 +572,14 @@ const PATROCINADORES: Pregunta[] = [
     titulo: "¿Cuánto podrías invertir por torneo?",
     opciones: ["Menos de $200.000", "$200.000 a $500.000", "$500.000 a $1.000.000", "Más de $1.000.000", "Solo en especie"],
   },
+  {
+    id: "pa7",
+    codigo: "PA7",
+    tipo: "unica",
+    titulo: "¿Prefieres patrocinar un torneo corto de barrio o uno largo distrital?",
+    opciones: ["Torneo corto de barrio", "Torneo largo distrital", "Ambos", "Depende del costo"],
+  },
+  apoyoInstitucional("PA8"),
 ];
 
 // ── Cuerpo técnico ──────────────────────────────────────────────────
@@ -520,6 +628,14 @@ const TECNICOS: Pregunta[] = [
     exclusivas: ["Ninguna por este trabajo", NO_RESPONDER],
   },
   {
+    id: "t12",
+    codigo: "T12",
+    tipo: "multiple",
+    titulo: "¿Recibes capacitaciones como entrenador?",
+    opciones: ["Sí, de la liga", "Sí, del IDRD o el distrito", "Sí, de la alcaldía local", "Sí, por mi cuenta", "No recibo capacitaciones"],
+    exclusivas: ["No recibo capacitaciones"],
+  },
+  {
     id: "t8",
     codigo: "T8",
     tipo: "unica",
@@ -542,6 +658,7 @@ const TECNICOS: Pregunta[] = [
     opciones: ["Falta de escenarios", "Costos", "Falta de torneos", "Poco apoyo de las familias", "Falta de capacitación", "Otro"],
   },
   { id: "t11", codigo: "T11", tipo: "escala", titulo: "Califica de 1 a 5 la organización de los torneos en los que participas", extremos: ["Muy mala", "Muy buena"] },
+  apoyoInstitucional("T13"),
 ];
 
 // ── Organizadores ───────────────────────────────────────────────────
@@ -622,6 +739,93 @@ const ORGANIZADORES: Pregunta[] = [
     titulo: "¿Qué apoyo necesitas de la liga o del distrito?",
     opciones: ["Escenarios", "Árbitros", "Capacitación", "Difusión", "Patrocinios", "Permisos"],
   },
+  apoyoInstitucional("O13"),
+];
+
+// ── Árbitros ────────────────────────────────────────────────────────
+const ARBITROS: Pregunta[] = [
+  {
+    id: "ar1",
+    codigo: "AR1",
+    tipo: "unica",
+    titulo: "¿Hace cuánto arbitras?",
+    opciones: ["Menos de 2 años", "2 a 5 años", "6 a 10 años", "Más de 10 años"],
+  },
+  {
+    id: "ar2",
+    codigo: "AR2",
+    tipo: "unica",
+    titulo: "¿Perteneces a algún colegio o asociación arbitral?",
+    opciones: ["Sí", "No", "Estuve pero ya no"],
+  },
+  {
+    id: "ar3",
+    codigo: "AR3",
+    tipo: "multiple",
+    titulo: "¿Cuentas con estas afiliaciones por tu trabajo como árbitro?",
+    opciones: ["EPS", "ARL", "Pensión", "Prestaciones sociales", "Seguro de accidentes", "Ninguna"],
+    exclusivas: ["Ninguna"],
+  },
+  {
+    id: "ar4",
+    codigo: "AR4",
+    tipo: "multiple",
+    titulo: "¿Tu asociación o agremiación te da algún beneficio?",
+    opciones: ["Capacitaciones", "Uniformes", "Seguro", "Apoyo legal", "Pago puntual", "Ninguno"],
+    exclusivas: ["Ninguno"],
+  },
+  {
+    id: "ar5",
+    codigo: "AR5",
+    tipo: "unica",
+    titulo: "¿Te has sentido con miedo o inseguro en alguna cancha?",
+    opciones: ["Nunca", "Pocas veces", "Varias veces", "Casi siempre"],
+  },
+  {
+    id: "ar6",
+    codigo: "AR6",
+    tipo: "unica",
+    opcional: true,
+    titulo: "¿Alguna vez te han agredido físicamente por una decisión arbitral?",
+    opciones: ["No", "Sí, una vez", "Sí, varias veces", NO_RESPONDER],
+  },
+  {
+    id: "ar7",
+    codigo: "AR7",
+    tipo: "cuadricula",
+    titulo: "Califica de 1 a 5",
+    extremos: ["Muy malo", "Muy bueno"],
+    filas: [
+      { id: "ar7_sanciones", etiqueta: "Sanciones por agresiones a árbitros" },
+      { id: "ar7_organizadores", etiqueta: "Apoyo de los organizadores" },
+      { id: "ar7_distrito", etiqueta: "Apoyo del distrito o la alcaldía local" },
+      { id: "ar7_capacitaciones", etiqueta: "Calidad de las capacitaciones" },
+      { id: "ar7_respeto", etiqueta: "Respeto de jugadores, técnicos y público" },
+    ],
+  },
+  {
+    id: "ar8",
+    codigo: "AR8",
+    tipo: "unica",
+    titulo: "¿Con qué frecuencia recibes capacitación en reglamento?",
+    opciones: ["Cada mes", "Cada 6 meses", "Una vez al año", "Casi nunca"],
+  },
+  {
+    id: "ar9",
+    codigo: "AR9",
+    tipo: "unica",
+    titulo: "¿Crees que las nuevas generaciones de árbitros llegan bien preparadas?",
+    opciones: ["Sí", "En parte", "No", "No sé"],
+  },
+  {
+    id: "ar10",
+    codigo: "AR10",
+    tipo: "unica",
+    titulo: "¿Crees que el arbitraje necesita un recambio generacional?",
+    opciones: ["Sí", "No", "Necesita más formación que recambio", "No sé"],
+  },
+  apoyoInstitucional("AR12"),
+  { id: "ar11", codigo: "AR11", tipo: "abierta", opcional: true, max: 300, titulo: "¿Qué necesitas para hacer mejor tu trabajo?" },
 ];
 
 // ── Roles ───────────────────────────────────────────────────────────
@@ -641,6 +845,7 @@ export const ROLES: Rol[] = [
   { etiqueta: "Periodista", corto: "Periodistas", seccion: "El fútbol de salón visto desde los medios", preguntas: PERIODISTAS },
   { etiqueta: "Creador de contenido", corto: "Creadores de contenido", seccion: "Creadores del fútbol de salón en Bogotá", preguntas: CREADORES },
   { etiqueta: "Patrocinador o marca", corto: "Patrocinadores", seccion: "Marcas que apoyan el fútbol de salón", preguntas: PATROCINADORES },
+  { etiqueta: "Árbitro o juez", corto: "Árbitros", seccion: "Encuesta para árbitros", preguntas: ARBITROS },
 ];
 
 export const rolDe = (etiqueta: unknown) => ROLES.find((x) => x.etiqueta === etiqueta);

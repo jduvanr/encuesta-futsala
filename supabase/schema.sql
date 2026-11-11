@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════════
 -- Encuestas dirigidas futsala.co y Liga de Fútbol de Salón de Bogotá
--- (jugadores, aficionados, cuerpo técnico, organizadores, periodistas, creadores y patrocinadores)
+-- (jugadores, aficionados, cuerpo técnico, organizadores, periodistas, creadores, patrocinadores y árbitros)
 -- Pega todo este archivo en Supabase → SQL Editor → Run.
 -- Se puede ejecutar varias veces sin romper nada.
 -- ═══════════════════════════════════════════════════════════════════
@@ -9,7 +9,7 @@
 -- El id lo genera el navegador y se guarda en localStorage: si la misma
 -- persona intenta enviar dos veces, la llave primaria lo rechaza.
 -- El bloque inicial (rol, localidad, edad) va en columnas; las respuestas
--- propias de cada rol (J1…J18, A1…A13, T1…T11, O1…O12, PE1…PE6, CR1…CR6, PA1…PA6) van en "detalle" (JSON).
+-- propias de cada rol (J1…J28, A1…A14, T1…T13, O1…O13, PE1…PE7, CR1…CR7, PA1…PA8, AR1…AR12) van en "detalle" (JSON).
 create table if not exists public.respuestas_roles (
   id            uuid primary key,
   fecha         timestamptz not null default now(),
@@ -31,7 +31,8 @@ create table if not exists public.respuestas_roles (
 alter table public.respuestas_roles drop constraint if exists respuestas_roles_rol_check;
 alter table public.respuestas_roles add constraint respuestas_roles_rol_check check (rol in (
   'Jugador o jugadora','Aficionado o espectador','Entrenador o cuerpo técnico',
-  'Organizador de torneos o liga','Periodista','Creador de contenido','Patrocinador o marca'));
+  'Organizador de torneos o liga','Periodista','Creador de contenido','Patrocinador o marca',
+  'Árbitro o juez'));
 
 create index if not exists respuestas_roles_fecha_idx on public.respuestas_roles (fecha desc);
 create index if not exists respuestas_roles_rol_idx on public.respuestas_roles (rol);
