@@ -28,7 +28,7 @@ function leerEnv(nombre) {
     if (m) return m[1].trim().replace(/^["']|["']$/g, "");
   }
 }
-const URL_SITIO = (leerEnv("NEXT_PUBLIC_SITE_URL") || "https://encuesta.futsala.co").replace(/\/$/, "");
+const URL_SITIO = (leerEnv("NEXT_PUBLIC_SITE_URL") || "https://encuesta-futsala.vercel.app").replace(/\/$/, "");
 
 // ── 1. Fondo de cancha ──────────────────────────────────────────────
 const CANCHA_SVG = `

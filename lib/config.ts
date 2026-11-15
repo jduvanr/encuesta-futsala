@@ -1,6 +1,11 @@
 /** Datos generales del sitio. Cambia aquí lo que necesites. */
 export const SITIO = {
-  url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, ""),
+  // 1) NEXT_PUBLIC_SITE_URL si la configuraste; 2) en Vercel, el dominio de producción del proyecto; 3) local.
+  url: (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
+    "http://localhost:3000"
+  ).replace(/\/$/, ""),
   titulo: "Tu VOZ también cuenta, micrero",
   descripcion:
     "Encuesta distrital del fútbol de salón y el microfútbol en Bogotá. Elige tu rol y responde en 3 a 7 minutos.",

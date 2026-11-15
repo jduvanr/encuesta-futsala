@@ -40,7 +40,7 @@ Copia `.env.example` como `.env.local` y llena los valores:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Llave pública. Solo permite insertar respuestas |
 | `SUPABASE_SERVICE_ROLE_KEY` | Llave secreta. Solo la usa el servidor para el panel `/admin` |
 | `ADMIN_PASSWORD` | Contraseña del panel `/admin` (larga y única) |
-| `NEXT_PUBLIC_SITE_URL` | URL pública final, sin `/` al final. Ej.: `https://encuesta.futsala.co` |
+| `NEXT_PUBLIC_SITE_URL` | URL pública final, sin `/` al final. Ej.: `https://encuesta-futsala.vercel.app`. En Vercel elige el tipo **Config** (no Secret) y luego haz **Redeploy** |
 
 > **Sin Supabase configurado**, el proyecto funciona en **modo demostración** al correrlo localmente: la encuesta no guarda nada (lo muestra en la consola) y `/admin` muestra datos ficticios. En producción, sin las variables, el envío muestra un error.
 

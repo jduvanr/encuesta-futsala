@@ -35,7 +35,9 @@ export function Cierre({
     if (leerEstado()?.contacto) setEstadoTel("ok");
   }, []);
 
-  const textoCompartir = `${SITIO.titulo}. Responde la encuesta distrital del fútbol de salón y el microfútbol en Bogotá (${SITIO.tiempoEstimado}): ${SITIO.url}/?utm_source=whatsapp`;
+  // La dirección sale de la página que está abierta, así el enlace siempre funciona aunque cambie el dominio.
+  const urlSitio = typeof window !== "undefined" ? window.location.origin : SITIO.url;
+  const textoCompartir = `${SITIO.titulo}. Responde la encuesta distrital del fútbol de salón y el microfútbol en Bogotá (${SITIO.tiempoEstimado}): ${urlSitio}/?utm_source=whatsapp`;
 
   async function guardarTel(e: React.FormEvent) {
     e.preventDefault();
