@@ -5,7 +5,7 @@ import { SITIO } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Política de tratamiento de datos",
-  description: "Cómo futsala.co trata los datos personales de la encuesta sobre fútbol de salón en Bogotá.",
+  description: "Cómo futsala.tv trata los datos personales de la encuesta distrital de fútbol de salón en Bogotá.",
 };
 
 export default function Politica() {
@@ -20,7 +20,7 @@ export default function Politica() {
 
           <h2>1. Responsable</h2>
           <p>
-            {SITIO.responsable}, en alianza con la Liga de Fútbol de Salón de Bogotá, es responsable del tratamiento de los datos
+            {SITIO.responsable} es responsable del tratamiento de los datos
             recogidos en esta encuesta, conforme a la Ley 1581 de 2012 y el Decreto 1074 de 2015 (que incorpora el Decreto 1377
             de 2013). Contacto: <a className="text-amarillo underline" href={`mailto:${SITIO.correoDatos}`}>{SITIO.correoDatos}</a>.
           </p>

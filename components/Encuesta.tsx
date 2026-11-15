@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { SITIO } from "@/lib/config";
-import { guardarEstado, leerEstado, nuevoId } from "@/lib/estado";
+import { guardarEstado, leerEstado, leerModoEncuestador, nuevoId } from "@/lib/estado";
 import {
   BLOQUE_INICIAL,
   NO_AUTORIZA,
@@ -22,9 +22,10 @@ import { Cierre } from "./Cierre";
 
 type Fase = "inicio" | "preguntas" | "sin-autorizacion" | "fin";
 
-function origenUtm(): string {
+function origenUtm(encuestador: boolean): string {
   const p = new URLSearchParams(window.location.search);
-  return (p.get("utm_source") || p.get("utm_medium") || p.get("utm_campaign") || "directo").slice(0, 100);
+  const porDefecto = encuestador ? "encuestador" : "directo";
+  return (p.get("utm_source") || p.get("utm_medium") || p.get("utm_campaign") || porDefecto).slice(0, 100);
 }
 
 const PRIMERA = BLOQUE_INICIAL[0].id;
@@ -38,12 +39,18 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [yaRespondio, setYaRespondio] = useState(false);
+  const [encuestador, setEncuestador] = useState(false);
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const cambioDePaso = useRef(false);
 
-  // Si ya respondió desde este navegador, va directo al cierre.
   useEffect(() => {
-    if (leerEstado()?.enviado) {
+    const modo = leerModoEncuestador();
+    setEncuestador(modo);
+    if (!leerEstado()?.enviado) return;
+    // Modo encuestador: al recargar siempre arranca una encuesta nueva.
+    if (modo) guardarEstado({ id: nuevoId(), enviado: false });
+    // Modo público: si ya respondió desde este navegador, va directo al cierre.
+    else {
       setYaRespondio(true);
       setFase("fin");
     }
@@ -104,7 +111,7 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
       localidad: r.localidad,
       edad: r.edad,
       detalle: detalleDe(r),
-      origen: origenUtm(),
+      origen: origenUtm(encuestador),
     });
     setEnviando(false);
     if (resultado === "error") {
@@ -137,7 +144,8 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
     window.scrollTo({ top: 0 });
   }
 
-  if (fase === "fin") return <Cierre qrYoutube={qrYoutube} yaRespondio={yaRespondio} onNuevaPersona={nuevaPersona} />;
+  if (fase === "fin")
+    return <Cierre qrYoutube={qrYoutube} yaRespondio={yaRespondio} encuestador={encuestador} onNuevaPersona={nuevaPersona} />;
 
   if (fase === "sin-autorizacion") {
     return (
@@ -168,14 +176,26 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
   if (fase === "inicio") {
     return (
       <section className="tarjeta animate-aparece" aria-labelledby="titulo-encuesta">
+        {encuestador && (
+          <p className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amarillo/40 bg-amarillo/10 px-3 py-2 text-xs text-amarillo">
+            <span>
+              <strong>Modo encuestador activo:</strong> este dispositivo puede registrar varias encuestas.
+            </span>
+            <a href="/?modo=publico" className="underline underline-offset-2">
+              Desactivar
+            </a>
+          </p>
+        )}
         <Bandera className="mb-6 w-20" />
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amarillo">Encuesta distrital · Bogotá 2026</p>
         <h1 id="titulo-encuesta" className="text-[44px] font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
           Tu <span className="text-amarillo">voz</span> también cuenta, <span className="text-rojo">micrero</span>
         </h1>
         <p className="mt-5 text-[15px] leading-relaxed text-white/80">
-          La gran encuesta del fútbol de salón y el microfútbol en las 20 localidades de Bogotá. Elige tu rol y responde las
-          preguntas pensadas para ti.
+          <strong className="font-semibold text-blanco">Encuesta distrital de fútbol de salón.</strong> Recogemos la experiencia
+          de jugadores, aficionados, cuerpo técnico, árbitros, organizadores, periodistas, creadores de contenido y
+          patrocinadores de las 20 localidades, para impulsar mejores escenarios, torneos y transmisiones en Bogotá. Tus
+          respuestas son anónimas y te tomarán entre {SITIO.tiempoEstimado.replace(" a ", " y ")}, según tu rol.
         </p>
         <ul className="mt-5 flex flex-wrap gap-2" aria-label="Encuestas disponibles">
           {ROLES.map((x) => (

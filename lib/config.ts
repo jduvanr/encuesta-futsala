@@ -7,7 +7,7 @@ export const SITIO = {
   tiempoEstimado: "3 a 7 minutos",
   // Correo para que los participantes ejerzan sus derechos (Ley 1581). CÁMBIALO por uno real.
   correoDatos: "futsalabogotatv@gmail.com",
-  responsable: "futsala.co",
+  responsable: "futsala.tv",
 } as const;
 
 export const REDES = {

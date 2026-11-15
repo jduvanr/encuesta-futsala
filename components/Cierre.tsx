@@ -17,10 +17,12 @@ const REDES_BOTONES: { nombre: NombreIcono; red: string; usuario: string; href: 
 export function Cierre({
   qrYoutube,
   yaRespondio,
+  encuestador,
   onNuevaPersona,
 }: {
   qrYoutube: string;
   yaRespondio: boolean;
+  encuestador: boolean;
   onNuevaPersona: () => void;
 }) {
   const tituloRef = useRef<HTMLHeadingElement>(null);
@@ -69,6 +71,16 @@ export function Cierre({
         </a>
         .
       </p>
+
+      {/* Varias personas en el mismo dispositivo (tablet o celular del encuestador, puesto en el escenario) */}
+      <button
+        type="button"
+        onClick={onNuevaPersona}
+        className={`${encuestador ? "btn-primario text-lg" : "btn-secundario"} mt-5 w-full`}
+      >
+        {encuestador ? "Nueva encuesta" : "Responder otra encuesta en este dispositivo"}
+        <span aria-hidden="true">→</span>
+      </button>
 
       {/* WhatsApp opcional */}
       <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
@@ -163,14 +175,6 @@ export function Cierre({
       >
         <Icono nombre="whatsapp" /> Compartir por WhatsApp
       </a>
-
-      {/* Varias personas en el mismo dispositivo (p. ej. un celular o tablet en el escenario) */}
-      <div className="mt-6 border-t border-white/10 pt-6 text-center">
-        <p className="text-sm text-white/70">¿Alguien más quiere responder en este dispositivo?</p>
-        <button type="button" onClick={onNuevaPersona} className="btn-secundario mt-3 w-full">
-          Responder otra encuesta
-        </button>
-      </div>
     </section>
   );
 }

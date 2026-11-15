@@ -99,6 +99,7 @@ Esto regenera:
 ## 7. Cómo funciona
 
 - **Duplicados:** al empezar, el navegador genera un identificador y lo guarda en `localStorage`. Ese mismo identificador es el `id` de la fila, así que un segundo envío desde el mismo navegador lo rechaza la base de datos, y quien ya respondió ve directamente la pantalla de cierre.
+- **Modo encuestador:** abre `/?modo=encuestador` en la tablet o celular con el que aplicas la encuesta. Queda activo en ese dispositivo aunque recargues: al terminar cada encuesta aparece el botón "Nueva encuesta" y las respuestas se marcan con origen `encuestador`. Para desactivarlo abre `/?modo=publico`.
 - **Privacidad:** las respuestas no tienen nombre ni teléfono. El WhatsApp opcional va a la tabla `contactos`, sin ningún vínculo con las respuestas.
 - **Velocidad:** no se usa el SDK de Supabase en el navegador (se usa `fetch` directo a la API REST), la fuente Poppins se sirve desde el mismo dominio y el QR de YouTube se genera en el servidor. Recharts solo se carga en `/admin`.
 - **Panel `/admin`:** protegido con cookie `httpOnly` firmada a partir de `ADMIN_PASSWORD`. Cambiar la contraseña cierra todas las sesiones. Los CSV usan `;` como separador y UTF-8 con BOM para abrir bien en Excel en español.

@@ -1,5 +1,5 @@
 /**
- * Encuestas dirigidas futsala.co y Liga de Fútbol de Salón de Bogotá.
+ * Encuesta distrital de fútbol de salón de futsala.tv.
  *
  * Flujo: bloque inicial (B1 a B4) → la pregunta de rol (B2) decide cuál de las 8 encuestas sigue.
  * Todas las preguntas son obligatorias salvo las marcadas con `opcional: true`.
@@ -68,7 +68,7 @@ export const BLOQUE_INICIAL: Pregunta[] = [
     tipo: "autorizacion",
     titulo: "Autorización de datos",
     texto:
-      "Autorizo a futsala.co y a la Liga de Fútbol de Salón de Bogotá a tratar mis datos con fines estadísticos y de mejora del deporte, según la Ley 1581 de 2012. Si soy menor de 18 años, respondo con permiso de mi acudiente.",
+      "Autorizo a futsala.tv a tratar mis datos con fines estadísticos y de mejora del deporte, según la Ley 1581 de 2012. Si soy menor de 18 años, respondo con permiso de mi acudiente.",
     opciones: [AUTORIZA, NO_AUTORIZA],
   },
   {
