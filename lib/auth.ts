@@ -9,11 +9,22 @@ async function hmac(clave: string, mensaje: string): Promise<string> {
   return Array.from(new Uint8Array(firma), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Token esperado en la cookie. Cambia si cambia la contraseña (cierra todas las sesiones). */
+/**
+ * Token de sesión: "<vencimiento>.<firma>". La firma depende de ADMIN_PASSWORD, así que
+ * al cambiar la contraseña se cierran todas las sesiones, y cada token vence solo.
+ */
 export async function tokenAdmin(): Promise<string | null> {
   const pass = process.env.ADMIN_PASSWORD;
   if (!pass) return null;
-  return hmac(pass, "futsala-admin-sesion-v1");
+  const exp = Math.floor(Date.now() / 1000) + DURACION_SESION;
+  return `${exp}.${await hmac(pass, `futsala-admin-sesion-v2|${exp}`)}`;
+}
+
+function iguales(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let dif = 0;
+  for (let i = 0; i < a.length; i++) dif |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return dif === 0;
 }
 
 /** Comparación en tiempo constante de la contraseña ingresada. */
@@ -27,7 +38,10 @@ export async function claveCorrecta(intento: string): Promise<boolean> {
 }
 
 export async function sesionValida(valorCookie: string | undefined): Promise<boolean> {
-  if (!valorCookie) return false;
-  const esperado = await tokenAdmin();
-  return esperado !== null && valorCookie === esperado;
+  const pass = process.env.ADMIN_PASSWORD;
+  if (!valorCookie || !pass) return false;
+  const [expTxt, firma] = valorCookie.split(".");
+  const exp = Number(expTxt);
+  if (!firma || !Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return false;
+  return iguales(firma, await hmac(pass, `futsala-admin-sesion-v2|${exp}`));
 }
