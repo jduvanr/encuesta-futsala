@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════
--- Encuestas dirigidas futsala.co y Liga de Fútbol de Salón de Bogotá
+-- Encuestas dirigidas de futsala.co
 -- (jugadores, aficionados, cuerpo técnico, organizadores, periodistas, creadores, patrocinadores y árbitros)
 -- Pega todo este archivo en Supabase → SQL Editor → Run.
 -- Se puede ejecutar varias veces sin romper nada.
@@ -66,6 +66,19 @@ grant insert (whatsapp) on public.contactos to anon;
 
 -- El panel /admin lee con la llave service_role (secreta), que salta RLS.
 grant all on public.respuestas_roles, public.contactos to service_role;
+
+-- ── Vistas y tablas auxiliares: nunca públicas ─────────────────────
+-- Las vistas nuevas en "public" nacen con permisos para anon. Se retiran aquí
+-- (la vista v_respuestas_tabla expuso todas las respuestas antes de este ajuste).
+do $$
+declare r record;
+begin
+  for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'public' and c.relkind in ('v', 'm')
+  loop
+    execute format('revoke all on public.%I from anon, authenticated', r.relname);
+  end loop;
+end $$;
 
 -- ── Versión anterior ───────────────────────────────────────────────
 -- La primera versión (8 preguntas) usaba la tabla "respuestas". Ya no se usa.

@@ -1,6 +1,6 @@
 # Encuesta futsala.co: ¿Cómo vives el fútbol de salón en Bogotá?
 
-Encuesta pensada primero para celular, para el estudio de **futsala.co** con la **Liga de Fútbol de Salón de Bogotá**.
+Encuesta pensada primero para celular, para el estudio de **futsala.co**.
 
 - **Stack:** Next.js 14 (App Router) · TypeScript · Tailwind CSS · Supabase (plan gratuito) · Vercel
 - **Rutas:** `/` encuesta · `/politica-de-datos` · `/admin` panel de resultados (con contraseña)
