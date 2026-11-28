@@ -40,6 +40,7 @@ Copia `.env.example` como `.env.local` y llena los valores:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Llave pública. Solo permite insertar respuestas |
 | `SUPABASE_SERVICE_ROLE_KEY` | Llave secreta. Solo la usa el servidor para el panel `/admin` |
 | `ADMIN_PASSWORD` | Contraseña del panel `/admin` (larga y única) |
+| `ENCUESTADOR_CLAVE` | Clave del modo encuestador para las tablets (distinta de `ADMIN_PASSWORD`; quien la tenga puede registrar varias encuestas, pero no ve los resultados) |
 | `NEXT_PUBLIC_SITE_URL` | URL pública final, sin `/` al final. Ej.: `https://encuesta-futsala.vercel.app`. En Vercel elige el tipo **Config** (no Secret) y luego haz **Redeploy** |
 
 > **Sin Supabase configurado**, el proyecto funciona en **modo demostración** al correrlo localmente: la encuesta no guarda nada (lo muestra en la consola) y `/admin` muestra datos ficticios. En producción, sin las variables, el envío muestra un error.
@@ -98,8 +99,8 @@ Esto regenera:
 
 ## 7. Cómo funciona
 
-- **Duplicados:** al empezar, el navegador genera un identificador y lo guarda en `localStorage`. Ese mismo identificador es el `id` de la fila, así que un segundo envío desde el mismo navegador lo rechaza la base de datos, y quien ya respondió ve directamente la pantalla de cierre.
-- **Modo encuestador:** abre `/?modo=encuestador` en la tablet o celular con el que aplicas la encuesta. Queda activo en ese dispositivo aunque recargues: al terminar cada encuesta aparece el botón "Nueva encuesta" y las respuestas se marcan con origen `encuestador`. Para desactivarlo abre `/?modo=publico`.
+- **Una respuesta por dispositivo:** las respuestas no van directo a Supabase, pasan por `/api/respuesta` en el servidor. El servidor vuelve a validar la encuesta, le pone al dispositivo una cookie `httpOnly` (`fs_disp`, 400 días) y guarda en la columna `dispositivo` solo una huella HMAC de esa cookie. Un índice único en Supabase rechaza una segunda respuesta del mismo dispositivo, y la llave pública ya no puede insertar en `respuestas_roles`, así que nadie se salta el límite llamando a Supabase directamente. Quien ya respondió ve la pantalla de cierre, sin botón para responder otra vez. Límite conocido: borrar las cookies del navegador o usar una ventana de incógnito cuenta como un dispositivo nuevo (sin pedir cuenta o documento no se puede evitar del todo).
+- **Modo encuestador (con clave):** abre `/?modo=encuestador` en la tablet o celular con el que aplicas la encuesta y escribe la clave `ENCUESTADOR_CLAVE`. Queda activo 12 horas aunque recargues: al terminar cada encuesta aparece el botón "Nueva encuesta" y las respuestas se marcan con origen `encuestador`. Si tienes abierta la sesión de `/admin` en ese navegador, también funciona sin clave. Para desactivarlo abre `/?modo=publico`. Cambiar la clave en Vercel desactiva todas las tablets.
 - **Privacidad:** las respuestas no tienen nombre ni teléfono. El WhatsApp opcional va a la tabla `contactos`, sin ningún vínculo con las respuestas.
 - **Velocidad:** no se usa el SDK de Supabase en el navegador (se usa `fetch` directo a la API REST), la fuente Poppins se sirve desde el mismo dominio y el QR de YouTube se genera en el servidor. Recharts solo se carga en `/admin`.
 - **Panel `/admin`:** protegido con cookie `httpOnly` firmada a partir de `ADMIN_PASSWORD`. Cambiar la contraseña cierra todas las sesiones. Los CSV usan `;` como separador y UTF-8 con BOM para abrir bien en Excel en español.

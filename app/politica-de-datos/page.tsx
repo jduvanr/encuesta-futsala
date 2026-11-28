@@ -33,6 +33,10 @@ export default function Politica() {
               torneos.
             </li>
             <li>El canal por el que llegaste a la encuesta (por ejemplo, un código QR o una red social).</li>
+            <li>
+              Una cookie técnica con un identificador aleatorio de tu dispositivo, para permitir una sola respuesta por
+              persona. En la base de datos solo guardamos una huella cifrada de ese identificador, que no te identifica.
+            </li>
             <li>Opcionalmente, tu número de WhatsApp, solo si decides dejarlo al final.</li>
           </ul>
           <p className="mt-2">

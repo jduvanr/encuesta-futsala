@@ -21,7 +21,7 @@ export default async function Admin() {
   if (lecturaConfigurada()) {
     try {
       const [r, c] = await Promise.all([
-        leerTodo<FilaRespuesta>("respuestas_roles"),
+        leerTodo<FilaRespuesta>("respuestas_roles", "id,fecha,autorizacion,rol,localidad,edad,detalle,origen"),
         leerTodo<{ id: string }>("contactos", "id,fecha"),
       ]);
       filas = r;

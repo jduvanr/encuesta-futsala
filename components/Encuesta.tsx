@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { SITIO } from "@/lib/config";
-import { guardarEstado, leerEstado, leerModoEncuestador, nuevoId } from "@/lib/estado";
+import { guardarEstado, leerEstado, nuevoId } from "@/lib/estado";
 import {
   BLOQUE_INICIAL,
   NO_AUTORIZA,
@@ -16,7 +16,6 @@ import {
   type Respuestas,
   type Valor,
 } from "@/lib/encuesta";
-import { insertarPublico } from "@/lib/supabase";
 import { Bandera } from "./Encabezado";
 import { Cierre } from "./Cierre";
 
@@ -40,21 +39,42 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
   const [enviando, setEnviando] = useState(false);
   const [yaRespondio, setYaRespondio] = useState(false);
   const [encuestador, setEncuestador] = useState(false);
+  const [verificado, setVerificado] = useState(false);
+  const [pidiendoClave, setPidiendoClave] = useState(false);
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const cambioDePaso = useRef(false);
 
+  // Al abrir: el servidor dice si este dispositivo ya respondió y si está autorizado como encuestador.
   useEffect(() => {
-    const modo = leerModoEncuestador();
-    setEncuestador(modo);
-    if (!leerEstado()?.enviado) return;
-    // Modo encuestador: al recargar siempre arranca una encuesta nueva.
-    if (modo) guardarEstado({ id: nuevoId(), enviado: false });
-    // Modo público: si ya respondió desde este navegador, va directo al cierre.
-    else {
-      setYaRespondio(true);
-      setFase("fin");
-    }
+    const modo = new URLSearchParams(window.location.search).get("modo");
+    (async () => {
+      if (modo === "publico") await fetch("/api/encuestador", { method: "DELETE" }).catch(() => null);
+      const est = (await fetch("/api/respuesta", { cache: "no-store" })
+        .then((res) => res.json())
+        .catch(() => null)) as { respondio?: boolean; encuestador?: boolean } | null;
+      const enc = Boolean(est?.encuestador);
+      setEncuestador(enc);
+      setVerificado(true);
+      if (enc) {
+        // Modo encuestador: al recargar siempre arranca una encuesta nueva.
+        if (leerEstado()?.enviado) guardarEstado({ id: nuevoId(), enviado: false });
+        return;
+      }
+      if (modo === "encuestador") setPidiendoClave(true);
+      // Una sola respuesta por dispositivo: si ya respondió (según el servidor o este navegador), va al cierre.
+      if (est?.respondio || leerEstado()?.enviado) {
+        setYaRespondio(true);
+        setFase("fin");
+      }
+    })();
   }, []);
+
+  function encuestadorActivado() {
+    setEncuestador(true);
+    setPidiendoClave(false);
+    window.history.replaceState(null, "", "/");
+    nuevaPersona();
+  }
 
   // Accesibilidad: al cambiar de pregunta, el foco va al título.
   useEffect(() => {
@@ -104,15 +124,20 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
     setError(null);
     const estado = leerEstado() ?? { id: nuevoId(), enviado: false };
     guardarEstado(estado);
-    const resultado = await insertarPublico("respuestas_roles", {
-      id: estado.id,
-      autorizacion: true,
-      rol: r.rol,
-      localidad: r.localidad,
-      edad: r.edad,
-      detalle: detalleDe(r),
-      origen: origenUtm(encuestador),
-    });
+    const resultado = await fetch("/api/respuesta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: estado.id,
+        rol: r.rol,
+        localidad: r.localidad,
+        edad: r.edad,
+        detalle: detalleDe(r),
+        origen: origenUtm(encuestador),
+      }),
+    })
+      .then(async (res) => (res.ok ? ((await res.json()).resultado as "ok" | "duplicado") : "error"))
+      .catch(() => "error" as const);
     setEnviando(false);
     if (resultado === "error") {
       setError("No pudimos guardar tu respuesta. Revisa tu conexión e inténtalo de nuevo.");
@@ -132,7 +157,7 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
     } else irA(idx - 1, "atras");
   }
 
-  // Otra persona va a responder en este mismo dispositivo: identificador nuevo y encuesta en blanco.
+  // Modo encuestador: otra persona va a responder en esta tablet. Identificador nuevo y encuesta en blanco.
   function nuevaPersona() {
     guardarEstado({ id: nuevoId(), enviado: false });
     setR({});
@@ -143,6 +168,8 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
     setFase("inicio");
     window.scrollTo({ top: 0 });
   }
+
+  if (pidiendoClave) return <ClaveEncuestador onActivado={encuestadorActivado} onCancelar={() => setPidiendoClave(false)} />;
 
   if (fase === "fin")
     return <Cierre qrYoutube={qrYoutube} yaRespondio={yaRespondio} encuestador={encuestador} onNuevaPersona={nuevaPersona} />;
@@ -214,7 +241,7 @@ export function Encuesta({ qrYoutube }: { qrYoutube: string }) {
             <span className="font-semibold">Una pregunta por pantalla</span>
           </li>
         </ul>
-        <button type="button" onClick={empezar} className="btn-primario mt-7 w-full text-lg">
+        <button type="button" onClick={empezar} disabled={!verificado} className="btn-primario mt-7 w-full text-lg">
           Empezar
         </button>
         <p className="mt-4 text-center text-xs text-white/55">
@@ -562,5 +589,67 @@ function Chulo() {
     <svg viewBox="0 0 24 24" className="h-4 w-4 text-negro" fill="none" stroke="currentColor" strokeWidth={3.5} aria-hidden="true">
       <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+/** Pide la clave del modo encuestador (se valida en el servidor). */
+function ClaveEncuestador({ onActivado, onCancelar }: { onActivado: () => void; onCancelar: () => void }) {
+  const [clave, setClave] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+
+  async function activar(e: React.FormEvent) {
+    e.preventDefault();
+    setEnviando(true);
+    setError(null);
+    const res = await fetch("/api/encuestador", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clave }),
+    }).catch(() => null);
+    setEnviando(false);
+    if (res?.ok) return onActivado();
+    const datos = (await res?.json().catch(() => null)) as { error?: string } | null;
+    setError(datos?.error ?? "No se pudo verificar la clave. Revisa tu conexión.");
+  }
+
+  return (
+    <section className="tarjeta animate-aparece" aria-labelledby="titulo-clave">
+      <Bandera className="mb-6 w-20" />
+      <h1 id="titulo-clave" className="text-[26px] font-bold leading-tight">
+        Modo encuestador
+      </h1>
+      <p className="mt-3 text-[15px] leading-relaxed text-white/80">
+        Escribe la clave de encuestador para registrar varias encuestas en este dispositivo. Queda activo por 12 horas.
+      </p>
+      <form onSubmit={activar} noValidate className="mt-5">
+        <label htmlFor="clave-encuestador" className="block text-sm font-semibold">
+          Clave
+        </label>
+        <input
+          id="clave-encuestador"
+          type="password"
+          autoComplete="current-password"
+          value={clave}
+          onChange={(e) => {
+            setClave(e.target.value);
+            setError(null);
+          }}
+          aria-invalid={Boolean(error)}
+          className="mt-2 min-h-[52px] w-full rounded-2xl border border-white/20 bg-negro px-4 text-base text-blanco focus:border-amarillo focus:outline focus:outline-[3px] focus:outline-offset-2 focus:outline-amarillo"
+        />
+        {error && (
+          <p role="alert" className="mt-3 rounded-xl bg-rojo px-3 py-2 text-sm font-semibold">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="btn-primario mt-5 w-full" disabled={enviando || !clave}>
+          {enviando ? "Verificando…" : "Activar modo encuestador"}
+        </button>
+        <button type="button" className="btn-secundario mt-3 w-full" onClick={onCancelar}>
+          Cancelar
+        </button>
+      </form>
+    </section>
   );
 }

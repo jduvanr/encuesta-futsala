@@ -66,7 +66,7 @@ export function Cierre({
         {yaRespondio ? "¡Ya habías participado!" : "¡Tu respuesta quedó enviada!"}
       </h1>
       <p className="mt-3 text-[15px] leading-relaxed text-white/80">
-        {yaRespondio && "Tu respuesta ya quedó registrada desde este dispositivo. "}
+        {yaRespondio && "Ya hay una respuesta registrada desde este dispositivo y solo se permite una por persona. "}
         Gracias por responder. Tus respuestas ayudan a mejorar el fútbol de salón en Bogotá. Síguenos en Instagram como{" "}
         <a href={REDES.instagram} target="_blank" rel="noopener noreferrer" className="font-semibold text-amarillo underline-offset-2 hover:underline">
           @futsala.tv
@@ -74,15 +74,12 @@ export function Cierre({
         .
       </p>
 
-      {/* Varias personas en el mismo dispositivo (tablet o celular del encuestador, puesto en el escenario) */}
-      <button
-        type="button"
-        onClick={onNuevaPersona}
-        className={`${encuestador ? "btn-primario text-lg" : "btn-secundario"} mt-5 w-full`}
-      >
-        {encuestador ? "Nueva encuesta" : "Responder otra encuesta en este dispositivo"}
-        <span aria-hidden="true">→</span>
-      </button>
+      {/* Solo el modo encuestador (con clave) puede registrar varias personas en el mismo dispositivo. */}
+      {encuestador && (
+        <button type="button" onClick={onNuevaPersona} className="btn-primario mt-5 w-full text-lg">
+          Nueva encuesta <span aria-hidden="true">→</span>
+        </button>
+      )}
 
       {/* WhatsApp opcional */}
       <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
